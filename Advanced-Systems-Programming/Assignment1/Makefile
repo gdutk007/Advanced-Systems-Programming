@@ -1,7 +1,5 @@
-Assignment1: email_filter calendar_filter
+Assignment1: filters
 
-email_filter: email_filter.c 
+filters: 
 	gcc email_filter.c -o email_filter
-
-calendar_filter: calendar_filter.c
 	gcc calendar_filter.c -o calendar_filter

@@ -169,20 +169,29 @@ int isTimeEarlier(char * time1, char * time2){
     if( !strcmp(time1,"--:--")) return -1;
     if( !strcmp(time2,"--:--")) return -1;
 
-    // tokenize
     char t1[3];
     char t2[3];
-    memcpy(t1,time1,2);
-    memcpy(t2,time2,2);
+    // tokenize
+    t1[0] = time1[0];
+    t1[1] = time1[1];
+    t1[2] = '\0';
+    t2[0] = time2[0];
+    t2[1] = time2[1];
+    t2[2] = '\0';
     // convert to int
     int num1 = (int) strtol(t1, (char **)NULL, 10);
     int num2 = (int) strtol(t2, (char **)NULL, 10);
+
     // if earlier hour return
     if(num1 < num2) return 0;
 
     // tokenize
-    memcpy(t1,&time1[3],2);
-    memcpy(t2,&time2[3],2);
+    t1[0] = time1[3];
+    t1[1] = time1[4];
+    t1[2] = '\0';
+    t2[0] = time2[3];
+    t2[1] = time2[4];
+    t2[2] = '\0';
     // convert to int
     num1 = (int) strtol(t1, (char **)NULL, 10);
     num2 = (int) strtol(t2, (char **)NULL, 10);
@@ -192,17 +201,24 @@ int isTimeEarlier(char * time1, char * time2){
 }
 
 struct eventList_t * SearchEarliestEventByDate(char * date){
-    struct eventList_t * temp = calendarPtr;
+    struct eventList_t * temp = calendarPtr;  
     struct eventList_t * earliestEvent = NULL;
+
+    //printf("*****%s: date:%s \n",__func__,date);
     while(temp){
-        if( !strcmp(date, temp->Event.Date) ){
-            if(!earliestEvent) earliestEvent = temp;
-            if(isTimeEarlier(temp->Event.Time,earliestEvent->Event.Time) == 0){
-                earliestEvent = temp;
+            if(temp && !strcmp(date,temp->Event.Date)){
+                //printf("time1:%s, time2:%s****\n",temp->Event.Time,earliestEvent->Event.Time);
+                if(!earliestEvent) earliestEvent = temp;
+                if(isTimeEarlier(temp->Event.Time,earliestEvent->Event.Time) == 0){
+                    earliestEvent = temp;
+                    //printf("comparison is true, time is earlier \n");
+                }else{
+                    //printf("comparison is false, time is NOT earlier \n");
+                }
             }
-        }
         temp = temp->nextEvent;
     }
+    //printf("we are returning\n");
     return earliestEvent;
 }
 
@@ -247,6 +263,7 @@ void CreateEvent(struct event_t Event){
     }
     AppendEvent(Event);
     calendarEvent = SearchEarliestEventByDate(Event.Date);
+
     if( calendarEvent && !strcmp(calendarEvent->Event.Action,Event.Action) && !strcmp(calendarEvent->Event.Date,Event.Date)
         && !strcmp(calendarEvent->Event.Location,Event.Location) && !strcmp(calendarEvent->Event.Time,Event.Time)){
         printf("%s,%s,%s \n",calendarEvent->Event.Date,
@@ -261,6 +278,7 @@ void EditEvent(struct event_t Event){
        printf("%s: Title does not exist\n",__func__);
        return;
    }
+   //printf("we made it this far\n");
     // see if event we're editing is the earliest and if location has changed, if yes, print event.
    int isLocationChanged = -1;
    if(strcmp(Event.Location,calendarEvent->Event.Location) != 0 ){
@@ -304,7 +322,17 @@ struct eventList_t * Search_EventByTitle_Date_Time(struct event_t Event){
 void DeleteEvent(struct event_t Event){
     struct eventList_t * temp = Search_EventByTitle_Date_Time(Event);
     if(temp){
-        calendarPtr = deleteNode(calendarPtr, temp);
+        struct eventList_t * earliestEvent = SearchEarliestEventByDate(Event.Date);
+        if( earliestEvent && !compareEvents(temp->Event,earliestEvent->Event)){
+            calendarPtr = deleteNode(calendarPtr, temp);
+            earliestEvent = SearchEarliestEventByDate(Event.Date);
+            if(earliestEvent){
+                printf("%s,%s,%s \n",earliestEvent->Event.Date,
+                                        earliestEvent->Event.Time,earliestEvent->Event.Location);
+            }
+        }else{
+            calendarPtr = deleteNode(calendarPtr, temp);
+        }
         if(!SearchEventByDate(Event.Date)){
             printf("%s,--:--,NA\n",Event.Date);
         }
