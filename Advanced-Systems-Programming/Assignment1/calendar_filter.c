@@ -72,17 +72,19 @@ void ProcessCalendar(struct event_t Event){
 }
 
 int main(){
+	setvbuf(stdin,NULL,_IONBF,0);
+	setvbuf(stdout,NULL,_IONBF,0);
 	char fileOutput[BUFFERSIZE];
 	while( 1 ){
 		char line[BUFFERSIZE];
 		memset(line, 0x00, BUFFERSIZE);
-		if ( fgets(line , BUFFERSIZE , stdin) == NULL ){
+		if( fgets(line , BUFFERSIZE , stdin) == NULL ){
 			break;
 		}
 		char str[BUFFERSIZE];
 		memset(str, 0x00, BUFFERSIZE);
 		strcpy(str, line);
-		//printf("%s: %s",__func__,str);
+		//printf("%s",str);
         struct event_t Event = parseInput(str);
         if(strlen( Event.Action) != 0 && strlen( Event.Title) != 0 && strlen( Event.Time) != 0  ){
             ProcessCalendar(Event);

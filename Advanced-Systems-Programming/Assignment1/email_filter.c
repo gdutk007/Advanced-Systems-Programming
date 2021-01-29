@@ -118,6 +118,8 @@ void emailFilter(char * line){
 }
 
 int main(){ 	
+	setvbuf(stdin,NULL,_IONBF,0);
+	setvbuf(stdout,NULL,_IONBF,0);
 	char fileOutput[BUFFERSIZE];
 	int eventNumber = 0; 	
 	while( 1 ) {
