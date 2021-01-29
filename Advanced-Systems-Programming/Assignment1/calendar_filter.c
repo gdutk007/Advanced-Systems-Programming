@@ -327,6 +327,20 @@ void DeleteEvent(struct event_t Event){
         struct eventList_t * earliestEvent = SearchEarliestEventByDate(Event.Date);
         if( earliestEvent && !compareEvents(temp->Event,earliestEvent->Event)){
             calendarPtr = deleteNode(calendarPtr, temp);
+            if(deletePtr){
+                if(deletePtr == calendarPtr){
+                    if(calendarPtr->nextEvent){
+                        calendarPtr = calendarPtr->nextEvent;
+                        deletePtr->nextEvent = NULL;
+                        free(deletePtr);
+                        deletePtr = NULL;
+                    }else{
+                        free(deletePtr);
+                        deletePtr = NULL;
+                        calendarPtr = NULL;
+                    }
+                }
+            }
             earliestEvent = SearchEarliestEventByDate(Event.Date);
             if(earliestEvent){
                 printf("%s,%s,%s \n",earliestEvent->Event.Date,
@@ -334,6 +348,20 @@ void DeleteEvent(struct event_t Event){
             }
         }else{
             calendarPtr = deleteNode(calendarPtr, temp);
+            if(deletePtr){
+                if(deletePtr == calendarPtr){
+                    if(calendarPtr->nextEvent){
+                        calendarPtr = calendarPtr->nextEvent;
+                        deletePtr->nextEvent = NULL;
+                        free(deletePtr);
+                        deletePtr = NULL;
+                    }else{
+                        free(deletePtr);
+                        deletePtr = NULL;
+                        calendarPtr = NULL;
+                    }
+                }
+            }
         }
         if(!SearchEventByDate(Event.Date)){
             printf("%s,--:--,NA\n",Event.Date);
