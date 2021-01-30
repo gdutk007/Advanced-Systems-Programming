@@ -3,6 +3,9 @@ There's a chance that the program will not run because of the convetntion DOS of
 it happens to be the case that the input file was generated on a windows machine please make sure to run the dos2unix 
 utility on linux prior to testing out this software. 
 
+To Decompress: 
+  - tar -xzvf Dutka_Gianfranco_Assignment_1.tar.gz
+
 To make: 
   - decompress
   - enter: "make"
