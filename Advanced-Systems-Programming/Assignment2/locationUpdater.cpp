@@ -60,6 +60,8 @@ bool DeleteEvent(Event_t Event);
 
 Event_t searchEarliestEventByDate(string date);
 
+multimap<string, Event_t>::iterator searchEventByDateTitleTime(Event_t Event);
+
 bool CompareTime(string time1, string time2);
 
 bool CompareEvents(Event_t event1, Event_t event2);
@@ -80,7 +82,10 @@ int main(int argc, char *argv[]){
     cout << endl;
 
     processCalendarThread();
-
+    cout << "\n\n";
+    for(auto calEvent : CalendarFilter){
+        cout << calEvent.second.Date << "," << calEvent.second.Time << "," << calEvent.second.Location << endl;  
+    }
     return 0;
 }
 
@@ -221,7 +226,7 @@ bool processCalendar(string email){
     }else if(Event.Action == "X"){
         EditEvent(Event);
     }else if(Event.Action == "D"){
-        DeleteEvent(Event);
+        //DeleteEvent(Event);
     }else{
         // error we shouldn't be here
     }
@@ -231,13 +236,13 @@ bool processCalendar(string email){
 bool CreateEvent(Event_t Event){
     if(CalendarFilter.find(Event.Date) == CalendarFilter.end()){
         CalendarFilter.emplace(Event.Date,Event);
-        cout << Event.Date << " " << Event.Time << " " << Event.Location << endl;  
+        cout << Event.Date << "," << Event.Time << "," << Event.Location << endl;  
     }
     else{
         CalendarFilter.emplace(Event.Date,Event);
         Event_t earliestEvent = searchEarliestEventByDate(Event.Date);
         if(  CompareEvents(earliestEvent,Event) ){
-            cout << Event.Date << " " << Event.Time << " " << Event.Location << endl;  
+            cout << Event.Date << "," << Event.Time << "," << Event.Location << endl;  
         }
     }
     return true;
@@ -252,12 +257,31 @@ bool EditEvent(Event_t Event){
     Event_t earliestEvent = searchEarliestEventByDate(Event.Date);
     
     if( CompareEvents(iter->second,earliestEvent) ){
-        cout << iter->second.Date << " " << iter->second.Time << " " << iter->second.Location << endl; 
+        cout << iter->second.Date << "," << iter->second.Time << "," << iter->second.Location << endl; 
     }
     return true;
 }
 
 bool DeleteEvent(Event_t Event){
+    auto iter = searchEventByDateTitleTime(Event);
+    Event_t earliestEvent = searchEarliestEventByDate(iter->second.Date);
+    if(CompareEvents(earliestEvent,iter->second)){
+        CalendarFilter.erase(iter);
+        earliestEvent = searchEarliestEventByDate(Event.Date);
+        cout << earliestEvent.Date << "," << earliestEvent.Time << "," << earliestEvent.Location << endl;  
+        if(CalendarFilter.find(Event.Date) == CalendarFilter.end()){
+            cout << Event.Date <<",--:--,NA\n";
+        }
+    }
+    else{
+        CalendarFilter.erase(iter);
+        if(CalendarFilter.find(Event.Date) == CalendarFilter.end()){
+            cout << Event.Date <<",--:--,NA\n";
+        }else{
+            earliestEvent = searchEarliestEventByDate(Event.Date);
+            cout << earliestEvent.Date << "," << earliestEvent.Time << "," << earliestEvent.Location << endl; 
+        }
+    }
     return true;
 }
 
@@ -265,6 +289,7 @@ Event_t searchEarliestEventByDate(string date){
     Event_t earliestEvent = CalendarFilter.find(date)->second;
     for(auto iter = CalendarFilter.begin(); iter != CalendarFilter.end(); ++iter){
         if( iter->second.Date == date ){
+            cout << "inside function:" << iter->second.Date << "," << iter->second.Time << "," << iter->second.Location << endl; 
             if(!CompareTime(earliestEvent.Time,iter->second.Time)){
                 earliestEvent = iter->second;
             }
@@ -314,6 +339,17 @@ bool CompareEvents(Event_t event1, Event_t event2){
 multimap<string,Event_t>::iterator SearchEventByTitle(string title){
     for(auto iter = CalendarFilter.begin(); iter != CalendarFilter.end(); ++iter){
         if(iter->second.Title == title) return iter;
+    }
+    return CalendarFilter.end();
+}
+
+multimap<string,Event_t>::iterator searchEventByDateTitleTime(Event_t Event){
+    for(auto iter = CalendarFilter.begin(); iter != CalendarFilter.end(); ++iter){
+        if(iter->second.Time == Event.Time &&
+           iter->second.Title == Event.Title &&
+           iter->second.Date == Event.Date){
+                return iter;    
+           }
     }
     return CalendarFilter.end();
 }
