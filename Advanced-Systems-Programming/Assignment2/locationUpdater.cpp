@@ -34,7 +34,9 @@ vector<Event_t> Event_Buffer;
 
 bool parseArguments(int argc, char *argv[]);
 
-bool ParseValidEmails();
+bool ParseValidEmailsThread();
+
+bool processCalendarThread();
 
 bool CheckEmailString(string line);
 
@@ -47,8 +49,6 @@ bool CheckDate(string date);
 bool CheckTime(string time);
 
 bool CheckLocation(string location);
-
-bool processCalendarThread();
 
 bool processCalendar(string email);
 
@@ -74,18 +74,14 @@ int main(int argc, char *argv[]){
         cout << "Please Enter Valid Arguments! Program Terminating\n";
         exit(0);
     }
-
-    ParseValidEmails();
+    // this will be thread 1
+    ParseValidEmailsThread();
     for(auto email : ValidEmails){
         cout << email << endl;
     }
     cout << endl;
-
+    // this will be thread 2
     processCalendarThread();
-    cout << "\n\n";
-    for(auto calEvent : CalendarFilter){
-        cout << calEvent.second.Date << "," << calEvent.second.Time << "," << calEvent.second.Location << endl;  
-    }
     return 0;
 }
 
@@ -105,7 +101,7 @@ bool parseArguments(int argc, char *argv[]){
     return true;
 }
 
-bool ParseValidEmails(){
+bool ParseValidEmailsThread(){
     for (string line; getline(cin, line);) {
         if(strlen(line.c_str()) > 9){
             size_t pos = line.find("Subject: ");
@@ -113,6 +109,13 @@ bool ParseValidEmails(){
                 string email = line.substr(pos+strlen("Subject: "));
                 if(CheckEmailString(email)){
                     ValidEmails.push_back(email);
+                    /* When multi-threading this application
+                       we will also push emails into a buffer
+                       up to the buffer limit. Then we will 
+                       yield the cpu, process those emails in
+                       the other thread until the buffer is empty.
+                       We will repeat this until the application
+                       is done outputting. */
                 }
             }
         }
