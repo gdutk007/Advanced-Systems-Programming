@@ -78,7 +78,7 @@ multimap<string,Event_t>::iterator SearchEventByTitle(string title);
 
 int main(int argc, char *argv[]){
     bool validArg = parseArguments(argc,argv);
-    if(!validArg && BufferLength != 0){
+    if(!validArg ){
         cout << "Please Enter Valid Arguments! Program Terminating\n";
         exit(0);
     }
@@ -102,7 +102,7 @@ bool parseArguments(int argc, char *argv[]){
     }
     string bufferLen(argv[1]);
     const long len = strtol(bufferLen.c_str(),nullptr,10); 
-    if( len < 0){
+    if( len <= 0){
         cout << "please enter a valid number.\n";
         return false;
     }
