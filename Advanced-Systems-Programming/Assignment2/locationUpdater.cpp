@@ -2,9 +2,9 @@
 #include <bits/stdc++.h>
 #include <cstdlib>
 #include <string>
+#include <pthread.h>
 
 using namespace std;
-
 
 typedef enum {
 	ACTION,
@@ -26,6 +26,12 @@ typedef struct {
 
 static int BufferLength;
 
+bool Done = false;
+
+pthread_mutex_t mLock;
+
+pthread_cond_t cv;
+
 multimap<string, Event_t> CalendarFilter;
 
 vector<string> ValidEmails;
@@ -34,9 +40,11 @@ vector<Event_t> Event_Buffer;
 
 bool parseArguments(int argc, char *argv[]);
 
-bool ParseValidEmailsThread();
+static void * ParseValidEmailsThread(void * arg);
 
-bool processCalendarThread();
+static void * processCalendarThread(void * arg);
+
+static void * DebuggingEmailThread(void* arg);
 
 bool CheckEmailString(string line);
 
@@ -75,14 +83,15 @@ int main(int argc, char *argv[]){
         exit(0);
     }
     // this will be thread 1
-    ParseValidEmailsThread();
-    for(auto email : ValidEmails){
-        cout << email << endl;
-    }
-    cout << endl;
+    pthread_t t1;
+    int ret1;
+    ret1 = pthread_create(&t1,nullptr,ParseValidEmailsThread,NULL);
+
     // this will be thread 2
-    processCalendarThread();
-    return 0;
+    pthread_t t2;
+    int ret2;
+    ret2 = pthread_create(&t2,nullptr,processCalendarThread,NULL);
+    pthread_exit(nullptr);
 }
 
 
@@ -101,8 +110,9 @@ bool parseArguments(int argc, char *argv[]){
     return true;
 }
 
-bool ParseValidEmailsThread(){
-    for (string line; getline(cin, line);) {
+void * ParseValidEmailsThread(void * arg){
+    for (string line; getline(cin, line);){
+        pthread_mutex_lock(&mLock);
         if(strlen(line.c_str()) > 9){
             size_t pos = line.find("Subject: ");
             if(pos != string::npos){
@@ -119,8 +129,19 @@ bool ParseValidEmailsThread(){
                 }
             }
         }
+        pthread_mutex_unlock(&mLock);
+        /* After unlocking, signal cond if we have reached the required length */
+        while(ValidEmails.size() >= BufferLength)
+            pthread_cond_signal(&cv);
+
     }
-    return true;
+    Done = true;
+    /* signal again in case we are 
+       still blocking in the other
+       thread and we have stuff
+       left to process */
+    pthread_cond_signal(&cv);
+    pthread_exit(nullptr);
 }
 
 bool CheckEmailString(string line){
@@ -201,14 +222,8 @@ bool CheckLocation(string location){
     return location.length() == 10;
 }
 
-bool processCalendarThread(){
-    for(string email : ValidEmails){
-        processCalendar(email);    
-    }
-    return true;
-}
-
 bool processCalendar(string email){
+    if(email.empty()) return false;
     istringstream is(email);
     string part;
     Event_t Event;
@@ -355,4 +370,41 @@ multimap<string,Event_t>::iterator searchEventByDateTitleTime(Event_t Event){
            }
     }
     return CalendarFilter.end();
+}
+
+
+void * processCalendarThread(void * arg){
+    while(true && !Done){
+        /* Lock mutex */
+        pthread_mutex_lock(&mLock);
+        
+        while(!ValidEmails.size() && !Done )
+            pthread_cond_wait(&cv,&mLock);
+        /* Process the emails and then erase them.
+           Ideally this should of been a dequeue
+           but I got lazy */
+        while(ValidEmails.size()){
+            processCalendar(ValidEmails.front());
+            ValidEmails.erase(ValidEmails.begin());
+        }
+        pthread_mutex_unlock(&mLock);
+    }
+    pthread_exit(nullptr);
+}
+
+void * DebuggingEmailThread(void * arg){
+    while(true && !Done){
+        pthread_mutex_lock(&mLock);
+        while(!ValidEmails.size() && !Done ){
+            cout << "Cond_wait Blocking \n";
+            pthread_cond_wait(&cv,&mLock);
+        }
+
+        while(ValidEmails.size()){
+            cout << "The Valid Email is: " << ValidEmails.front() << endl;
+            ValidEmails.erase(ValidEmails.begin());
+        }
+        pthread_mutex_unlock(&mLock);
+    }
+    pthread_exit(nullptr);
 }
