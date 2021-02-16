@@ -180,17 +180,19 @@ bool CheckAction(string action){
 }
 bool CheckTitle(string title){
     // can titles have numebers????
-    if( title.length() != 10 &&
-        title.find('0') != std::string::npos ||
-        title.find('1') != std::string::npos ||
-        title.find('2') != std::string::npos ||
-        title.find('3') != std::string::npos ||
-        title.find('4') != std::string::npos ||
-        title.find('5') != std::string::npos ||
-        title.find('6') != std::string::npos ||
-        title.find('7') != std::string::npos ||
-        title.find('8') != std::string::npos ||
-        title.find('9') != std::string::npos)
+    if( title.length() != 10 
+        // &&
+        // title.find('0') != std::string::npos ||
+        // title.find('1') != std::string::npos ||
+        // title.find('2') != std::string::npos ||
+        // title.find('3') != std::string::npos ||
+        // title.find('4') != std::string::npos ||
+        // title.find('5') != std::string::npos ||
+        // title.find('6') != std::string::npos ||
+        // title.find('7') != std::string::npos ||
+        // title.find('8') != std::string::npos ||
+        // title.find('9') != std::string::npos
+        )
     {
         return false;
     }
@@ -381,7 +383,7 @@ void * processCalendarThread(void * arg){
         while(!ValidEmails.size() && !Done )
             pthread_cond_wait(&cv,&mLock);
         /* Process the emails and then erase them.
-           Ideally this should of been a dequeue
+           Ideally this should have been a dequeue
            but I got lazy */
         while(ValidEmails.size()){
             processCalendar(ValidEmails.front());
