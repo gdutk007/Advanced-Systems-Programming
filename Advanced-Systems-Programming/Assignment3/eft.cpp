@@ -2,7 +2,9 @@
 #include <bits/stdc++.h>
 #include <cstdlib>
 #include <string>
+#include <semaphore.h>
 #include <pthread.h>
+#include <unistd.h>
 
 using namespace std;
 
@@ -22,8 +24,8 @@ typedef struct{
     char **argv;
 }args_t;
 
-pthread_mutex_t mLock;
-
+sem_t SemTransfers;
+vector<sem_t> mSem;
 vector<Account_t> Accounts;
 vector<Transfer_t> Transfers;
 
@@ -37,19 +39,13 @@ bool parseAccount(string accountstr);
 
 bool parseTransfer(string Transfer);
 
-void printAccountsAndTransfers(){
-    cout << "size: " << Transfers.size() << "\n"; 
-    cout << "Accounts: \n";
-    for(auto account : Accounts){
-        cout << "Id: " << account.AccountId << " Balance: " << account.Money
-         << "\n";
-    }
-    cout << "\nTransfers: \n";
-    for(auto eft : Transfers){
-        cout << "From: " << eft.From << " To: " << eft.To << " Amount: " << eft.amount
-         << "\n";
-    }
-}
+void printAccountsAndTransfers();
+
+int GetAccountIndex(int account);
+
+bool InsertAccount(int id, int money=0);
+
+void PrintAccounts();
 
 int main(int argc, char *argv[]){
 
@@ -90,9 +86,17 @@ static void * ParseInput(void * arg){
                 }
             }
     }
-    printAccountsAndTransfers();
+    //printAccountsAndTransfers();
     vector<pthread_t> threads;
     threads.resize(MaxThreadNumber);
+    mSem.resize(Accounts.size());
+    // init buffer semaphores
+    int counts = (MaxThreadNumber == 1) ? 1 : MaxThreadNumber-1;  
+    sem_init(&SemTransfers,0,counts);
+    // init account semaphores
+    for(int i = 0; i < mSem.size(); ++i)
+        sem_init(&mSem[i],0,1);
+    
     for(int i = 0; i < threads.size(); ++i){
         int * arg = new int();
         *arg = i;
@@ -103,6 +107,10 @@ static void * ParseInput(void * arg){
             exit(0);
         }
     }
+    for(int i = 0; i < threads.size(); ++i)
+        pthread_join(threads[i],nullptr);
+    
+    PrintAccounts();
     pthread_exit(nullptr);
 }
 
@@ -116,7 +124,9 @@ bool parseAccount(string accountstr){
     Account.AccountId = strtol(part.c_str(),nullptr,10);
     getline(is, part, ' ');
     Account.Money = strtol(part.c_str(),nullptr,10);
-    Accounts.push_back(Account);
+    if(!InsertAccount(Account.AccountId,Account.Money)){
+        cout << "Account already exists, not insterting \n";
+    }
     return true;   
 }
 
@@ -136,15 +146,72 @@ bool parseTransfer(string Transfer){
     return true;   
 }
 
+
+void printAccountsAndTransfers(){
+    cout << "size: " << Transfers.size() << "\n"; 
+    cout << "Accounts: \n";
+    for(auto account : Accounts){
+        cout << "Id: " << account.AccountId << " Balance: " << account.Money
+         << "\n";
+    }
+    cout << "\nTransfers: \n";
+    for(auto eft : Transfers){
+        cout << "From: " << eft.From << " To: " << eft.To << " Amount: " << eft.amount
+         << "\n";
+    }
+    cout << "\n";
+}
+
 static void * SendMoney(void * arg){
     int tid = *((int*)arg);
     while(Transfers.size()){
-        pthread_mutex_lock(&mLock);
-        cout << "tid: " << tid << " popping" << "\n";
-        if(Transfers.size())
+        sem_wait(&SemTransfers);
+        //cout << "tid: " << tid << " came into room \n";
+        if(Transfers.size()){
+            Transfer_t transfer = Transfers.back();
             Transfers.pop_back();
-        cout << "tid: " << tid << " size: " << Transfers.size() << "\n";
-        pthread_mutex_unlock(&mLock);
+            int index1 = GetAccountIndex(transfer.To);
+            int index2 = GetAccountIndex(transfer.From);
+            if(index1 < 0 || index2 < 0){
+                cout << "Account out of bounds, exiting\n";
+                exit(0);
+            }
+            sem_wait(&mSem[index1]);
+            sem_wait(&mSem[index2]);
+            // cout << "tid: " << tid << " transfering from " << transfer.From 
+            //                         << " to " << transfer.To  << "\n";
+            Accounts[index1].Money += transfer.amount; 
+            Accounts[index2].Money -= transfer.amount;
+            sem_post(&mSem[index2]);
+            sem_post(&mSem[index1]);
+        }
+        sem_post(&SemTransfers);
+        usleep(100000);
+        //cout << "tid: " << tid << "leaving \n";
     }
     pthread_exit(nullptr);
+}
+
+int GetAccountIndex(int account){
+    for(int i = 0; i < Accounts.size(); ++i){
+        if(Accounts[i].AccountId == account) return i;
+    }
+    return -1;
+}
+
+bool InsertAccount(int id, int money){
+    for(auto acc : Accounts){
+        if(id == acc.AccountId) return false;
+    }
+    Account_t newAccout;
+    newAccout.AccountId = id;
+    newAccout.Money = money;
+    Accounts.push_back(newAccout);
+    return true;
+}
+
+void PrintAccounts(){
+    for(auto acc : Accounts)
+        cout <<acc.AccountId<<" "<<acc.Money << "\n";
+
 }
