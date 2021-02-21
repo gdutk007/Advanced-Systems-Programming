@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <bits/stdc++.h>
 #include <cstdlib>
 #include <string>
@@ -49,8 +50,8 @@ void PrintAccounts();
 
 int main(int argc, char *argv[]){
 
-    if(argc != 2){
-        cout << "Please enter at least and at most 1 argument\n";
+    if(argc != 3){
+        cout << "Please enter at least and at most 2 argument\n";
         exit(0);
     }
     // this will be main thread
@@ -64,14 +65,25 @@ int main(int argc, char *argv[]){
 
 static void * ParseInput(void * arg){
     char **argv = (char **) arg;
-    string bufferLen(argv[1]);
-    const long len = strtol(bufferLen.c_str(),nullptr,10); 
-    if( len <= 0){
-        cout << "please enter a valid number.\n";
-        pthread_exit(nullptr);
+    string FileName(argv[1]);
+    string bufferLen(argv[2]);
+    ifstream fin(FileName.c_str());
+    if(!bufferLen.size()){
+        cout<<"Please enter a valid number of thread workers. Exiting. \n";
+        exit(0);
     }
-    MaxThreadNumber = len;
-    for (string line; getline(cin, line);){
+    if(!FileName.size() || !fin){
+        cout << "Error Opening File. Exiting. \n";
+        exit(0);
+    }
+
+    MaxThreadNumber = strtol(bufferLen.c_str(),nullptr,10); 
+    if( MaxThreadNumber <= 0){
+        cout << "please enter a valid number. Number of threads must be greater than zero\n";
+        exit(0);
+    }
+ 
+    for (string line; getline(fin, line);){
             size_t pos = line.find("Transfer ");
             if( pos == string::npos ){
                 /* If not a transfer, parse Account creation */
