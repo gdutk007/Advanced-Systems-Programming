@@ -96,6 +96,8 @@ bool WriteToBuffer();
 
 Event_t searchEarliestEventByDate(string date);
 
+multimap<string, Event_t>::iterator safeSearchEarliestEventByDate(string date);
+
 multimap<string, Event_t>::iterator searchEventByDateTitleTime(Event_t Event);
 
 bool CompareTime(string time1, string time2);
@@ -171,10 +173,12 @@ int main(int argc, char *argv[]){
             while ((pid=waitpid(-1,&status,0))!=-1) {
                 printf("Process %d terminated\n",pid);
             }
-            return 0;
         }
     }
     cout << "For some reason we didn't wait until all the processes returned....\n";
+    for(auto event : CalendarFilter){
+        cout << event.second.Date << " " << event.second.Time << " " << event.second.Location << "\n";
+    }
     return 0;
 }
 
@@ -382,12 +386,11 @@ bool DeleteEvent(Event_t Event){
     Event_t earliestEvent = searchEarliestEventByDate(Event.Date);
     if(!earliestEvent.Date.empty() && CompareEvents(earliestEvent,iter->second)){
         CalendarFilter.erase(iter);
-        cout << "Hello\n";
-        auto iter = CalendarFilter.find(earliestEvent.Date);
-        if(iter != CalendarFilter.end()){
-            cout << iter->second.Date << "," << iter->second.Time << "," << iter->second.Location << endl;  
+        auto newEarliestEvent = safeSearchEarliestEventByDate(earliestEvent.Date);
+        if(newEarliestEvent != CalendarFilter.end()){
+            cout << newEarliestEvent->second.Date << "," << newEarliestEvent->second.Time << "," << newEarliestEvent->second.Location << endl;  
         }
-        if(iter == CalendarFilter.end()){
+        if(newEarliestEvent == CalendarFilter.end()){
             cout << Event.Date <<",--:--,NA\n";
         }
     }
@@ -401,6 +404,23 @@ bool DeleteEvent(Event_t Event){
     }
     return true;
 }
+
+
+multimap<string, Event_t>::iterator safeSearchEarliestEventByDate(string date){
+    if(CalendarFilter.find(date) == CalendarFilter.end()) return CalendarFilter.end();
+
+    multimap<string, Event_t>::iterator earliestEvent = CalendarFilter.find(date);
+
+    for(auto iter = CalendarFilter.begin(); iter != CalendarFilter.end(); ++iter){
+        if( iter->second.Date == date ){
+            if(!CompareTime(earliestEvent->second.Time,iter->second.Time)){
+                earliestEvent = iter;
+            }
+        }
+    }
+    return earliestEvent;
+}
+
 
 Event_t searchEarliestEventByDate(string date){
     Event_t earliestEvent = CalendarFilter.find(date)->second;
