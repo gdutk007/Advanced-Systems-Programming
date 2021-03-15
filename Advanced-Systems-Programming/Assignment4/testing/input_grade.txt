@@ -1,0 +1,19 @@
+Subject: Hello
+Subject: C,Course    ,01/12/2021,17:30,West      
+Subject: Welcome to Course!
+Subject: X,Course    ,01/12/2021,17:45,A46       
+Subject: C,Study     ,01/13/2021,14:15,A46       
+Subject: D,01/12/2021,17:45,A46       
+Subject: Greetings
+Subject: C,Seminar   ,01/13/2021,11:30,Larsen123 
+Subject: C,Library   ,01/13/2021,15:30,Ben320    
+Subject: X,Library   ,01/13/2021,10:15,Larsen110 
+Subject: C,Seminar   ,01/12/2021,12:30,Ben320    
+Subject: C,Library   ,01/15/2021,11:00,Larsen110 
+Subject: C,Housing   ,01/18/2021,14:45,Room101   
+Subject: C,Festival  ,01/17/2021,12:45,A46       
+Subject: D,Seminar   ,01/12/2021,12:30,Ben320    
+Subject: D,Seminar   ,01/13/2021,11:30,Larsen123 
+Subject: D,Library   ,01/13/2021,10:15,Larsen110 
+Subject: D,Study     ,01/13/2021,14:15,A46       
+Subject: C,Group     ,01/18/2021,13:30,Lobby     
