@@ -171,7 +171,6 @@ int main(int argc, char *argv[]){
         }else{
             // try to wait for any children while there exists at least one
             while ((pid=waitpid(-1,&status,0))!=-1) {
-                printf("Process %d terminated\n",pid);
             }
         }
     }
@@ -499,7 +498,10 @@ void processCalendarThread(){
         while( *Shared_Email_count > 0){
             *Shared_Email_count -= 1;
             //printf("Trying string : %s \n",&Shared_Valid_Emails[*Shared_Buffer_Read].ValidEmail[0]);
-            string email(Shared_Valid_Emails[*Shared_Buffer_Read].ValidEmail);
+	    
+	    auto end = std::find(Shared_Valid_Emails[*Shared_Buffer_Read].ValidEmail, Shared_Valid_Emails[*Shared_Buffer_Read].ValidEmail + defaultLength-1,'\0'); 
+            
+	    string email(Shared_Valid_Emails[*Shared_Buffer_Read].ValidEmail , end);
             //cout << "Email: " << email << "\n";
             //cout << "ProcessCalProcess Read Pointer: " << *Shared_Buffer_Read << " Shared Buffer Write: " << *Shared_Buffer_Write << "\n";
             for(int i = 0; i < defaultLength; ++i){
