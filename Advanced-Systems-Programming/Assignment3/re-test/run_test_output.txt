@@ -1,0 +1,416 @@
+make: Nothing to be done for 'Assignment3'.
+testing program with number: '1'
+Files testing.txt and output.txt are identical
+testing program with number: '2'
+Files testing.txt and output.txt are identical
+testing program with number: '3'
+Files testing.txt and output.txt are identical
+testing program with number: '4'
+Files testing.txt and output.txt are identical
+testing program with number: '5'
+Files testing.txt and output.txt are identical
+testing program with number: '6'
+Files testing.txt and output.txt are identical
+testing program with number: '7'
+Files testing.txt and output.txt are identical
+testing program with number: '8'
+Files testing.txt and output.txt are identical
+testing program with number: '9'
+Files testing.txt and output.txt are identical
+testing program with number: '10'
+Files testing.txt and output.txt are identical
+testing program with number: '11'
+Files testing.txt and output.txt are identical
+testing program with number: '12'
+Files testing.txt and output.txt are identical
+testing program with number: '13'
+Files testing.txt and output.txt are identical
+testing program with number: '14'
+Files testing.txt and output.txt are identical
+testing program with number: '15'
+Files testing.txt and output.txt are identical
+testing program with number: '16'
+Files testing.txt and output.txt are identical
+testing program with number: '17'
+Files testing.txt and output.txt are identical
+testing program with number: '18'
+Files testing.txt and output.txt are identical
+testing program with number: '19'
+Files testing.txt and output.txt are identical
+testing program with number: '20'
+Files testing.txt and output.txt are identical
+testing program with number: '21'
+Files testing.txt and output.txt are identical
+testing program with number: '22'
+Files testing.txt and output.txt are identical
+testing program with number: '23'
+Files testing.txt and output.txt are identical
+testing program with number: '24'
+Files testing.txt and output.txt are identical
+testing program with number: '25'
+Files testing.txt and output.txt are identical
+testing program with number: '26'
+Files testing.txt and output.txt are identical
+testing program with number: '27'
+Files testing.txt and output.txt are identical
+testing program with number: '28'
+Files testing.txt and output.txt are identical
+testing program with number: '29'
+Files testing.txt and output.txt are identical
+testing program with number: '30'
+Files testing.txt and output.txt are identical
+testing program with number: '31'
+Files testing.txt and output.txt are identical
+testing program with number: '32'
+Files testing.txt and output.txt are identical
+testing program with number: '33'
+Files testing.txt and output.txt are identical
+testing program with number: '34'
+Files testing.txt and output.txt are identical
+testing program with number: '35'
+Files testing.txt and output.txt are identical
+testing program with number: '36'
+Files testing.txt and output.txt are identical
+testing program with number: '37'
+Files testing.txt and output.txt are identical
+testing program with number: '38'
+Files testing.txt and output.txt are identical
+testing program with number: '39'
+Files testing.txt and output.txt are identical
+testing program with number: '40'
+Files testing.txt and output.txt are identical
+testing program with number: '41'
+Files testing.txt and output.txt are identical
+testing program with number: '42'
+Files testing.txt and output.txt are identical
+testing program with number: '43'
+Files testing.txt and output.txt are identical
+testing program with number: '44'
+Files testing.txt and output.txt are identical
+testing program with number: '45'
+Files testing.txt and output.txt are identical
+testing program with number: '46'
+Files testing.txt and output.txt are identical
+testing program with number: '47'
+Files testing.txt and output.txt are identical
+testing program with number: '48'
+Files testing.txt and output.txt are identical
+testing program with number: '49'
+Files testing.txt and output.txt are identical
+testing program with number: '50'
+Files testing.txt and output.txt are identical
+testing program with number: '51'
+Files testing.txt and output.txt are identical
+testing program with number: '52'
+Files testing.txt and output.txt are identical
+testing program with number: '53'
+Files testing.txt and output.txt are identical
+testing program with number: '54'
+Files testing.txt and output.txt are identical
+testing program with number: '55'
+Files testing.txt and output.txt are identical
+testing program with number: '56'
+Files testing.txt and output.txt are identical
+testing program with number: '57'
+Files testing.txt and output.txt are identical
+testing program with number: '58'
+Files testing.txt and output.txt are identical
+testing program with number: '59'
+Files testing.txt and output.txt are identical
+testing program with number: '60'
+Files testing.txt and output.txt are identical
+testing program with number: '61'
+Files testing.txt and output.txt are identical
+testing program with number: '62'
+Files testing.txt and output.txt are identical
+testing program with number: '63'
+Files testing.txt and output.txt are identical
+testing program with number: '64'
+Files testing.txt and output.txt are identical
+testing program with number: '65'
+Files testing.txt and output.txt are identical
+testing program with number: '66'
+Files testing.txt and output.txt are identical
+testing program with number: '67'
+Files testing.txt and output.txt are identical
+testing program with number: '68'
+Files testing.txt and output.txt are identical
+testing program with number: '69'
+Files testing.txt and output.txt are identical
+testing program with number: '70'
+Files testing.txt and output.txt are identical
+testing program with number: '71'
+Files testing.txt and output.txt are identical
+testing program with number: '72'
+Files testing.txt and output.txt are identical
+testing program with number: '73'
+Files testing.txt and output.txt are identical
+testing program with number: '74'
+Files testing.txt and output.txt are identical
+testing program with number: '75'
+Files testing.txt and output.txt are identical
+testing program with number: '76'
+Files testing.txt and output.txt are identical
+testing program with number: '77'
+Files testing.txt and output.txt are identical
+testing program with number: '78'
+Files testing.txt and output.txt are identical
+testing program with number: '79'
+Files testing.txt and output.txt are identical
+testing program with number: '80'
+Files testing.txt and output.txt are identical
+testing program with number: '81'
+Files testing.txt and output.txt are identical
+testing program with number: '82'
+Files testing.txt and output.txt are identical
+testing program with number: '83'
+Files testing.txt and output.txt are identical
+testing program with number: '84'
+Files testing.txt and output.txt are identical
+testing program with number: '85'
+Files testing.txt and output.txt are identical
+testing program with number: '86'
+Files testing.txt and output.txt are identical
+testing program with number: '87'
+Files testing.txt and output.txt are identical
+testing program with number: '88'
+Files testing.txt and output.txt are identical
+testing program with number: '89'
+Files testing.txt and output.txt are identical
+testing program with number: '90'
+Files testing.txt and output.txt are identical
+testing program with number: '91'
+Files testing.txt and output.txt are identical
+testing program with number: '92'
+Files testing.txt and output.txt are identical
+testing program with number: '93'
+Files testing.txt and output.txt are identical
+testing program with number: '94'
+Files testing.txt and output.txt are identical
+testing program with number: '95'
+Files testing.txt and output.txt are identical
+testing program with number: '96'
+Files testing.txt and output.txt are identical
+testing program with number: '97'
+Files testing.txt and output.txt are identical
+testing program with number: '98'
+Files testing.txt and output.txt are identical
+testing program with number: '99'
+Files testing.txt and output.txt are identical
+testing program with number: '100'
+Files testing.txt and output.txt are identical
+testing program with number: '1'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '2'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '3'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '4'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '5'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '6'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '7'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '8'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '9'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '10'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '11'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '12'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '13'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '14'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '15'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '16'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '17'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '18'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '19'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '20'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '21'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '22'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '23'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '24'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '25'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '26'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '27'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '28'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '29'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '30'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '31'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '32'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '33'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '34'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '35'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '36'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '37'
+132c132
+< 132 5360
+---
+> 132 3643
+157c157
+< 157 10211
+---
+> 157 11928
+205c205
+< 205 1762
+---
+> 205 1754
+363c363
+< 363 -9959
+---
+> 363 -9951
+testing program with number: '38'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '39'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '40'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '41'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '42'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '43'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '44'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '45'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '46'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '47'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '48'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '49'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '50'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '51'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '52'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '53'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '54'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '55'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '56'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '57'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '58'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '59'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '60'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '61'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '62'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '63'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '64'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '65'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '66'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '67'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '68'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '69'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '70'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '71'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '72'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '73'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '74'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '75'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '76'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '77'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '78'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '79'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '80'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '81'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '82'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '83'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '84'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '85'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '86'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '87'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '88'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '89'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '90'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '91'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '92'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '93'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '94'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '95'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '96'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '97'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '98'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '99'
+Files testing_grade.txt and output_grade.txt are identical
+testing program with number: '100'
+Files testing_grade.txt and output_grade.txt are identical

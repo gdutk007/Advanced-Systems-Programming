@@ -4,23 +4,27 @@ output_filename="testing.txt"
 delivered_filename="output.txt"
 make
 
-#x=1;
+x=1;
 
-#for x in {1..100}
-#do
-# echo "testing program with number: '$x'";
-# ./eft "input.txt" $x > $output_filename && diff -s $output_filename $delivered_filename
-# rm $output_filename
-#done
+for x in {1..100}
+do
+ echo "testing program with number: '$x'";
+ ./eft "input.txt" $x > $output_filename && diff -s $output_filename $delivered_filename && cmp $output_filename $delivered_filename
+ rm $output_filename
+done
 
 output_filename="testing_grade.txt"
 delivered_filename="output_grade.txt"
 x=1;
 
-for x in {1..50}
+for x in {1..100}
 do
+ 
  echo "testing program with number: '$x'";
- ./eft "input_grade.txt" $x > $output_filename && diff -s $output_filename $delivered_filename
+
+ ./eft "input_grade.txt" $x > $output_filename && diff -s $output_filename $delivered_filename && cmp $output_filename $delivered_filename
+
  #cat $output_filename
+ 
  rm $output_filename
 done
