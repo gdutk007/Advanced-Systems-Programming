@@ -36,7 +36,7 @@ struct ASP_mycdrv {
 static struct ASP_mycdrv * my_ASP_mycdrv;
 
 //NUM_DEVICES defaults to 3 unless specified during insmod
-int NUM_DEVICES = 3;
+int NUM_DEVICES = DEFAULT_DRIVERS;
 
 #define CDRV_IOC_MAGIC 'Z'
 #define ASP_CLEAR_BUF _IOW(CDRV_IOC_MAGIC, 1, int)
@@ -129,7 +129,6 @@ static int init_driver(void){
 	}
 	memset(my_ASP_mycdrv, 0x00, NUM_DEVICES * sizeof(struct ASP_mycdrv));
 
-
 	// now we need to initialize them
 	for(i = 0; i < NUM_DEVICES; ++i){
 		my_ASP_mycdrv[i].devNo = i;
@@ -145,11 +144,8 @@ static int init_driver(void){
 }
 
 static void exit_driver(void){
-
     pr_info("\ndevice unregistered\n");
-
 }
-
 
 module_init(init_driver);
 module_exit(exit_driver);
