@@ -27,24 +27,68 @@
 #endif
 
 struct ASP_mycdrv {
-	struct cdev dev;
+	struct cdev device;
 	char *ramdisk;
 	struct semaphore sem;
 	int devNo;
+	int size;
 };
 
 static struct ASP_mycdrv * my_ASP_mycdrv;
 
 //NUM_DEVICES defaults to 3 unless specified during insmod
 int NUM_DEVICES = DEFAULT_DRIVERS;
+static int major = 0, minor = 0;
+// params
+module_param(major, int, S_IRUGO);
+module_param(minor, int, S_IRUGO);
+module_param(NUM_DEVICES, int, S_IRUGO);
+
 
 #define CDRV_IOC_MAGIC 'Z'
 #define ASP_CLEAR_BUF _IOW(CDRV_IOC_MAGIC, 1, int)
 
-static int major = 0, minor = 0;
+/*
+ * Empty out the scull device; must be called with the device
+ * semaphore held.
+ */
+// what does this really do? 
+// int scull_trim(struct scull_dev *dev)
+// {
+// 	// struct scull_qset *next, *dptr;
+// 	// int qset = dev->qset;   /* "dev" is not-null */
+// 	// int i;
 
-static int mycdrv_open(struct inode *inode, struct file *file)
+// 	// for (dptr = dev->data; dptr; dptr = next) { /* all the list items */
+// 	// 	if (dptr->data) {
+// 	// 		for (i = 0; i < qset; i++)
+// 	// 			kfree(dptr->data[i]);
+// 	// 		kfree(dptr->data);
+// 	// 		dptr->data = NULL;
+// 	// 	}
+// 	// 	next = dptr->next;
+// 	// 	kfree(dptr);
+// 	// }
+// 	// dev->size = 0;
+// 	// dev->quantum = scull_quantum;
+// 	// dev->qset = scull_qset;
+// 	// dev->data = NULL;
+// 	return 0;
+// }
+
+static int mycdrv_open(struct inode *inode, struct file *filp)
 {
+	struct ASP_mycdrv * dev;
+
+	dev = container_of(inode->i_cdev, struct ASP_mycdrv,device);
+
+	// /* now trim to 0 the length of the device if open was write-only */
+	// if ( (filp->f_flags & O_ACCMODE) == O_WRONLY) {
+	// 	if (down_interruptible(&dev->sem))
+	// 		return -ERESTARTSYS;
+	// 	scull_trim(dev); /* ignore errors */
+	// 	up(&dev->sem);
+	// }
 	pr_info(" OPENING device: %s:\n\n", MYDEV_NAME);
 	return 0;
 }
@@ -56,18 +100,28 @@ static int mycdrv_release(struct inode *inode, struct file *file)
 }
 
 static ssize_t
-mycdrv_read(struct file *file, char __user * buf, size_t lbuf, loff_t * ppos)
+mycdrv_read(struct file *filp, char __user * buf, size_t count,
+												 loff_t * f_pos)
 {
-	int nbytes = 0;
-	// if ((lbuf + *ppos) > ramdisk_size) {
-	// 	pr_info("trying to read past end of device,"
-	// 		"aborting because this is just a stub!\n");
-	// 	return 0;
-	// }
-	// nbytes = lbuf - copy_to_user(buf, ramdisk + *ppos, lbuf);
-	// *ppos += nbytes;
-	// pr_info("\n READING function, nbytes=%d, pos=%d\n", nbytes, (int)*ppos);
-	return nbytes;
+	struct ASP_mycdrv *dev = filp->private_data; 
+	ssize_t retval = -ENOMEM; /* value used in "goto out" statements */
+
+	if (down_interruptible(&dev->sem))
+		return -ERESTARTSYS;
+	if (*f_pos >= ramdisk_size)
+		goto out;
+	if (*f_pos + count > ramdisk_size)
+		count = dev->size - *f_pos;
+
+	ssize_t num;
+	num = count - copy_to_user(buf, dev->ramdisk + *f_pos, count);
+	retval = num;
+	*f_pos += retval;
+    pr_info("\n READING function, nbytes=%lu, pos=%d\n", num, (int)*f_pos);
+	
+out: 
+	up(&dev->sem);
+	return retval;
 }
 
 static ssize_t
@@ -86,7 +140,6 @@ mycdrv_write(struct file *file, const char __user * buf, size_t lbuf,
 	return nbytes;
 }
 
-
 static const struct file_operations character_driver_fops = {
 	.owner = THIS_MODULE,
 	.read = mycdrv_read,
@@ -102,15 +155,15 @@ static void setup_cdev(struct ASP_mycdrv *dev, int index)
 {
 	int err, devno = MKDEV(major, minor + index);
     
-	cdev_init(&dev->dev, &character_driver_fops);
-	dev->dev.owner = THIS_MODULE;
-	err = cdev_add (&dev->dev, devno, 1);
+	cdev_init(&dev->device, &character_driver_fops);
+	dev->device.owner = THIS_MODULE;
+	err = cdev_add (&dev->device, devno, 1);
 	/* Fail gracefully if need be */
 	if (err)
 		printk(KERN_NOTICE "Error %d adding character device %d", err, index);
 }
-static int init_driver(void){
 
+static int init_driver(void){
 	int result, i;
 	dev_t dev = 0;
 	result = alloc_chrdev_region(&dev, minor, NUM_DEVICES,"scull");
@@ -120,7 +173,6 @@ static int init_driver(void){
 			"DRIVER: can't allocate a major driver, result: %d\n", result);
 		return result;
 	}
-
 	// allocating a dynamic number of devices here
 	my_ASP_mycdrv = kmalloc(NUM_DEVICES * sizeof(struct ASP_mycdrv), GFP_KERNEL);
 	if (!my_ASP_mycdrv) {
@@ -133,6 +185,7 @@ static int init_driver(void){
 	for(i = 0; i < NUM_DEVICES; ++i){
 		my_ASP_mycdrv[i].devNo = i;
 		my_ASP_mycdrv[i].ramdisk = kmalloc(ramdisk_size, GFP_KERNEL);
+		my_ASP_mycdrv[i].size = ramdisk_size;
 		sema_init(&my_ASP_mycdrv[i].sem,1);
 		setup_cdev(&my_ASP_mycdrv[i],i);
 	}
