@@ -34,7 +34,7 @@ static char *ramdisk;
 
 static dev_t first;
 static unsigned int count = 1;
-static int minor = 0;
+static int my_major = 700, my_minor = 0;
 static struct cdev *my_cdev;
 
 static int mycdrv_open(struct inode *inode, struct file *file)
@@ -88,17 +88,11 @@ static const struct file_operations mycdrv_fops = {
 	.release = mycdrv_release,
 };
 
-static int __init init_driver(void)
+static int __init my_init(void)
 {
-	int result, i;
-	dev_t dev = 0;
-	result = alloc_chrdev_region(&dev, minor, scull_nr_devs,"scull");
-	scull_major = MAJOR(dev);
-
-	// create dev which holds major and minor numbers
+	ramdisk = kmalloc(ramdisk_size, GFP_KERNEL);
 	first = MKDEV(my_major, my_minor);
-
-
+	register_chrdev_region(first, count, MYDEV_NAME);
 	my_cdev = cdev_alloc();
 	cdev_init(my_cdev, &mycdrv_fops);
 	cdev_add(my_cdev, first, count);
@@ -106,7 +100,7 @@ static int __init init_driver(void)
 	return 0;
 }
 
-static void __exit exit_driver(void)
+static void __exit my_exit(void)
 {
 	cdev_del(my_cdev);
 	unregister_chrdev_region(first, count);
@@ -114,8 +108,8 @@ static void __exit exit_driver(void)
 	kfree(ramdisk);
 }
 
-module_init(init_driver);
-module_exit(exit_driver);
+module_init(my_init);
+module_exit(my_exit);
 
 MODULE_AUTHOR("Jerry Cooperstein");
 MODULE_LICENSE("GPL v2");

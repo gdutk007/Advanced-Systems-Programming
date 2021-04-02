@@ -1,27 +1,24 @@
 #include <stdio.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <string.h>
 int main()
 {
-     /* Pointer to the file */
-     FILE *fp1;
-     /* Character variable to read the content of file */
-     char c;
+     
 
-     /* Opening a file in r mode*/
-     fp1= fopen ("/dev/mycdrv0", "r");
-     if(fp1 == NULL){
-	printf("We Could Not Open the FILE!!!!");
+  printf("Hello World!\n");
+/* Pointer to the file */
+     
+
+      int fd = open("/dev/mycdrv0", O_RDWR);
+      if(fd < 0){
+            printf(" Value of errno: %d\n ", errno);
+            printf("The error message is : %s\n",strerror(errno));
+            printf("We could not open the file. Failed with %i \n",fd);
       }else{
-	printf("Successfuly opened the FILE!!!!");
+            printf("We could open the file.\n");
       }
-     /* Infinite loop –I have used break to come out of the loop*/
-    // while(1)
-    // {
-    //    c = fgetc(fp1);
-    //    if(c==EOF)
-    //        break;
-    //    else
-    //        printf("%c", c);
-    // }
-     fclose(fp1);
+
      return 0;
 }
