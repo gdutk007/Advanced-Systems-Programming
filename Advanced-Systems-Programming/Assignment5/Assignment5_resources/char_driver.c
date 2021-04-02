@@ -63,37 +63,56 @@ static int mycdrv_release(struct inode *inode, struct file *file)
 }
 
 static ssize_t
-mycdrv_read(struct file *file, char __user * buf, size_t lbuf, loff_t * ppos)
+mycdrv_read(struct file *filp, char __user * buf, size_t count, loff_t * f_pos)
 {
-	// int nbytes;
-	// if ((lbuf + *ppos) > ramdisk_size) {
-	// 	pr_info("trying to read past end of device,"
-	// 		"aborting because this is just a stub!\n");
-	// 	return 0;
-	// }
-	// nbytes = lbuf - copy_to_user(buf, ramdisk + *ppos, lbuf);
-	// *ppos += nbytes;
-	// pr_info("\n READING function, nbytes=%d, pos=%d\n", nbytes, (int)*ppos);
-	// return nbytes;
+	struct char_devices * dev = filp->private_data;
+	ssize_t retval = 0;
 
-	return 0;
+	if(down_interruptible(&dev->sem))
+		return -ERESTARTSYS;
+	if(*f_pos >= dev->buffer_size)
+		goto out;
+	if(*f_pos + count > dev->buffer_size)
+		count = dev->buffer_size - *f_pos;
+	if( !dev || dev->data == NULL){
+		goto out;
+	}
+
+	if( copy_to_user(buf,dev->data+*f_pos,count) ){
+		retval = -EFAULT;
+		goto out;
+	}
+	*f_pos += count;
+	retval = count;
+out: 
+	up(&dev->sem);
+	return retval;
 }
 
 static ssize_t
-mycdrv_write(struct file *file, const char __user * buf, size_t lbuf,
-	     loff_t * ppos)
+mycdrv_write(struct file *filp, const char __user * buf, size_t count,
+	     loff_t * f_pos)
 {
-	// int nbytes;
-	// if ((lbuf + *ppos) > ramdisk_size) {
-	// 	pr_info("trying to read past end of device,"
-	// 		"aborting because this is just a stub!\n");
-	// 	return 0;
-	// }
-	// nbytes = lbuf - copy_from_user(ramdisk + *ppos, buf, lbuf);
-	// *ppos += nbytes;
-	// pr_info("\n WRITING function, nbytes=%d, pos=%d\n", nbytes, (int)*ppos);
-	//return nbytes;
-	return 0;
+	struct char_devices * dev = filp->private_data;
+	ssize_t retval = -ENOMEM;
+	if(down_interruptible(&dev->sem))
+		return -ERESTARTSYS;
+	if(!dev || !dev->data)
+		goto out;
+	if(count+*f_pos > dev->buffer_size){
+		count = dev->buffer_size-*f_pos;
+	}
+	if(copy_from_user(dev->data+*f_pos, buf, count)){
+		retval = -EFAULT;
+		goto out;
+	}
+	*f_pos += count;
+	retval = count;
+	if(dev->buffer_size < *f_pos)
+		dev->buffer_size = *f_pos;
+out:
+	up(&dev->sem);
+	return retval;
 }
 
 static const struct file_operations mycdrv_fops = {
@@ -187,7 +206,6 @@ static void cleanup_char_device(int dev_to_destroy){
 			device_destroy(char_device_class, MKDEV(my_major, i));
 			cdev_del(&char_devices[i].cdev);
 			kfree(char_devices[i].data);
-			//sem_destroy(&char_devices[i].sem); // this might not be for krnl prog
 		}
 		kfree(char_devices);
 	}
@@ -200,9 +218,6 @@ static void cleanup_char_device(int dev_to_destroy){
 
 static void __exit my_exit(void)
 {
-	// cdev_del(my_cdev);
-	// unregister_chrdev_region(first, count);
-	// kfree(ramdisk);
 	cleanup_char_device(NUMBER_OF_DEVICES);
 	pr_info("\ndevice unregistered\n");
 }
