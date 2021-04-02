@@ -101,10 +101,13 @@ void cleanup_momdule(void){
 
 static int mycdrv_open(struct inode *inode, struct file *filp)
 {
-	struct ASP_mycdrv * dev;
 
-	dev = container_of(inode->i_cdev, struct ASP_mycdrv,device);
+	pr_info("We are opening one of the devices...\n");
+	unsigned int mj = imajor(inode);
+	unsigned int mn = iminor(inode);
 
+	struct ASP_mycdrv * dev = &my_ASP_mycdrv[mn]; 
+	filp->private_data = dev;
 	// /* now trim to 0 the length of the device if open was write-only */
 	// if ( (filp->f_flags & O_ACCMODE) == O_WRONLY) {
 	// 	if (down_interruptible(&dev->sem))
