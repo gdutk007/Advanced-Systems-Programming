@@ -31,7 +31,7 @@ struct char_devices {
 	unsigned char *data;
 	unsigned long buffer_size; 
 	unsigned long block_size;  
-	struct mutex mutex; 
+	struct semaphore sem; 
 	struct cdev cdev;
 };
 
@@ -46,7 +46,11 @@ static void cleanup_char_device(int dev_to_destroy);
 
 static int mycdrv_open(struct inode *inode, struct file *filp)
 {
-	
+
+	struct char_devices * dev;
+	dev = container_of(inode->i_cdev, struct char_devices, cdev);
+	filp->private_data = dev;
+
 	pr_info(" OPENING device: %s:\n\n", MYDEV_NAME);
 	
 	return 0;
@@ -150,10 +154,10 @@ int build_device(struct char_devices * device_ptr, int index,struct class * char
 	dev_t devno = MKDEV(my_major,index);
 	struct device *device = NULL;
 	
-	device_ptr->data = NULL;
+	device_ptr->data = (unsigned char *)kzalloc(ramdisk_size,GFP_KERNEL);
 	device_ptr->buffer_size = ramdisk_size;
 	device_ptr->block_size = DEVICE_BLOCK_SIZE;
-	mutex_init(&device_ptr->mutex);
+	sema_init(&device_ptr->sem,1);
 	
 	// init char device
 	cdev_init(&device_ptr->cdev, &mycdrv_fops);
@@ -182,8 +186,8 @@ static void cleanup_char_device(int dev_to_destroy){
 		for(i = 0; i < dev_to_destroy; ++i){
 			device_destroy(char_device_class, MKDEV(my_major, i));
 			cdev_del(&char_devices[i].cdev);
-			//kfree(char_devices[i].data);
-			mutex_destroy(&char_devices[i].mutex);
+			kfree(char_devices[i].data);
+			//sem_destroy(&char_devices[i].sem); // this might not be for krnl prog
 		}
 		kfree(char_devices);
 	}
