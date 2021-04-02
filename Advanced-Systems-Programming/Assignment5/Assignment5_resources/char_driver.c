@@ -39,6 +39,7 @@ static struct ASP_mycdrv * my_ASP_mycdrv;
 //NUM_DEVICES defaults to 3 unless specified during insmod
 int NUM_DEVICES = DEFAULT_DRIVERS;
 static int major = 0, minor = 0;
+static struct class *driver_class = NULL;
 // params
 module_param(major, int, S_IRUGO);
 module_param(minor, int, S_IRUGO);
@@ -47,6 +48,28 @@ module_param(NUM_DEVICES, int, S_IRUGO);
 
 #define CDRV_IOC_MAGIC 'Z'
 #define ASP_CLEAR_BUF _IOW(CDRV_IOC_MAGIC, 1, int)
+
+
+
+void cleanup_momdule(void);
+
+void cleanup_momdule(void){
+	int i;
+	dev_t devno = MKDEV(major,minor);
+	if(my_ASP_mycdrv){
+		for(i = 0; i < NUM_DEVICES; ++i){
+			kfree(my_ASP_mycdrv[i].ramdisk);
+			device_destroy(driver_class, MKDEV(major, i));
+			cdev_del(&my_ASP_mycdrv[i].device);	
+		}
+		kfree(my_ASP_mycdrv);
+	}
+
+	if (driver_class)
+		class_destroy(driver_class);
+
+	unregister_chrdev_region(devno,NUM_DEVICES);
+}
 
 /*
  * Empty out the scull device; must be called with the device
@@ -125,19 +148,31 @@ out:
 }
 
 static ssize_t
-mycdrv_write(struct file *file, const char __user * buf, size_t lbuf,
-	     loff_t * ppos)
+mycdrv_write(struct file *filp, 
+		const char __user * buf, size_t count,
+	     loff_t * f_pos)
 {
-	int nbytes = 0;
-	// if ((lbuf + *ppos) > ramdisk_size) {
-	// 	pr_info("trying to read past end of device,"
-	// 		"aborting because this is just a stub!\n");
-	// 	return 0;
-	// }
-	// nbytes = lbuf - copy_from_user(ramdisk + *ppos, buf, lbuf);
-	// *ppos += nbytes;
-	// pr_info("\n WRITING function, nbytes=%d, pos=%d\n", nbytes, (int)*ppos);
-	return nbytes;
+	struct ASP_mycdrv *dev = filp->private_data; 
+	ssize_t retval = -ENOMEM; /* value used in "goto out" statements */
+	
+	if (down_interruptible(&dev->sem))
+		return -ERESTARTSYS;
+
+	if(count+*f_pos >= ramdisk_size)
+		pr_info("Trying to write past buffer\n");
+		goto out;
+
+	if (copy_from_user(dev->ramdisk+*f_pos,buf,count)) {
+		retval = -EFAULT;
+		goto out;
+	}
+	*f_pos += count;
+	retval = count;
+	pr_info("\n WRITING function, nbytes=%lu, pos=%d\n", 
+									count, (int)*f_pos);
+out: 
+	up(&dev->sem);
+	return retval;
 }
 
 static const struct file_operations character_driver_fops = {
@@ -151,13 +186,22 @@ static const struct file_operations character_driver_fops = {
 /*
  * Set up the char_dev structure for this device.
  */
-static void setup_cdev(struct ASP_mycdrv *dev, int index)
+static void setup_cdev(struct ASP_mycdrv *dev, int index,
+						struct class * class)
 {
+	struct device *device = NULL;
 	int err, devno = MKDEV(major, minor + index);
     
 	cdev_init(&dev->device, &character_driver_fops);
 	dev->device.owner = THIS_MODULE;
+	dev->device.ops   = &character_driver_fops;
 	err = cdev_add (&dev->device, devno, 1);
+
+	device = device_create(class, NULL, /* no parent device */ 
+		devno, NULL, /* no additional data */
+		MYDEV_NAME "%d", index);
+
+
 	/* Fail gracefully if need be */
 	if (err)
 		printk(KERN_NOTICE "Error %d adding character device %d", err, index);
@@ -165,9 +209,17 @@ static void setup_cdev(struct ASP_mycdrv *dev, int index)
 
 static int init_driver(void){
 	int result, i;
+	int err = 0;
 	dev_t dev = 0;
 	result = alloc_chrdev_region(&dev, minor, NUM_DEVICES,"scull");
 	major = MAJOR(dev);
+
+	driver_class = class_create(THIS_MODULE,MYDEV_NAME);
+	if (IS_ERR(driver_class)) {
+		err = PTR_ERR(driver_class);
+		goto fail;
+	}
+
 	if (result < 0) {
 		printk(KERN_WARNING 
 			"DRIVER: can't allocate a major driver, result: %d\n", result);
@@ -187,12 +239,13 @@ static int init_driver(void){
 		my_ASP_mycdrv[i].ramdisk = kmalloc(ramdisk_size, GFP_KERNEL);
 		my_ASP_mycdrv[i].size = ramdisk_size;
 		sema_init(&my_ASP_mycdrv[i].sem,1);
-		setup_cdev(&my_ASP_mycdrv[i],i);
+		setup_cdev(&my_ASP_mycdrv[i],i,driver_class);
 	}
     pr_info("\nSucceeded in registering character device %s\n", MYDEV_NAME);
-    return 0;
+    
+	return 0;
   fail:
-	//scull_cleanup_module();
+	cleanup_module();
 	return result;
 }
 
