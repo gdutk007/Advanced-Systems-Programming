@@ -17,14 +17,26 @@ int main()
             printf("The error message is : %s\n",strerror(errno));
             printf("We could not open the file. Failed with %i \n",fd);
       }else{
-            const size_t BUFF_COUNT = 10;
+            const size_t BUFF_COUNT = 256;
             char buff[BUFF_COUNT];
             char nullVal = 0x00;
-	      memcpy(buff,&nullVal,10);
+            memcpy(buff,&nullVal,BUFF_COUNT);
+
+            const char * str = "This is a test. Testing... 1 2 3.\n\0";
+	      char testString[256];
+            //memcpy(testString,str,sizeof(str));
+            
+            ssize_t bytesWritten = write(fd, str, 25);
+            if(bytesWritten >= 0){
+                  printf("We wrote %li bytes.\n",bytesWritten);      
+            }else{
+                  printf("Writing file failed with errno: %d\n ", errno);
+                  printf("The errno message is : %s\n",strerror(errno));
+            }
             printf("We could open the file. Attempting to read. \n");
-	      ssize_t bytesRead = read(fd,buff,BUFF_COUNT);
+	      ssize_t bytesRead = read(fd,&buff[0],25);
 	      if(bytesRead >= 0){
-                  printf("We read %li bytes.\n",bytesRead);      
+                  printf("We read %li bytes. String: %s \n",bytesRead, &buff[0]);      
             }else{
                   printf("Reading file failed with errno: %d\n ", errno);
                   printf("The errno message is : %s\n",strerror(errno));
