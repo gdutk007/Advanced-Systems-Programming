@@ -237,7 +237,6 @@ static void scull_remove_proc(void)
 /*
  * Open and close
  */
-
 int scull_open(struct inode *inode, struct file *filp)
 {
 	struct scull_dev *dev; /* device information */
@@ -292,7 +291,8 @@ struct scull_qset *scull_follow(struct scull_dev *dev, int n)
  * Data management: read and write
  */
 
-ssize_t scull_read(struct file *filp, char __user *buf, size_t count,
+ssize_t scull_read(struct file *filp,
+ char __user *buf, size_t count,
                 loff_t *f_pos)
 {
 	struct scull_dev *dev = filp->private_data; 
@@ -395,7 +395,6 @@ ssize_t scull_write(struct file *filp, const char __user *buf, size_t count,
 
 long scull_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 {
-
 	int err = 0, tmp;
 	int retval = 0;
     

@@ -18,14 +18,11 @@
 
 #include <linux/semaphore.h>
 
-#define MYDEV_NAME "mycdrv"
-
-//static char *ramdisk;
-#define ramdisk_size (size_t) (16*PAGE_SIZE)
-#define DEVICE_BLOCK_SIZE 512
+#include "char_driver.h"
 
 int NUMBER_OF_DEVICES = 3;
 int my_major = 0;
+int NUM_DEVICES = 0;
 
 struct char_devices {
 	unsigned char *data;
@@ -35,6 +32,8 @@ struct char_devices {
 	struct cdev cdev;
 };
 
+module_param(NUM_DEVICES, int, S_IRUGO);
+
 struct char_devices * char_devices = NULL;
 struct class * char_device_class = NULL;
 
@@ -43,14 +42,13 @@ static int build_device(struct char_devices * device_ptr,
 
 static void cleanup_char_device(int dev_to_destroy);
 
+static loff_t mycdrv_lseek(struct file *filp, loff_t off, int whence);
 
 static int mycdrv_open(struct inode *inode, struct file *filp)
 {
-
 	struct char_devices * dev;
 	dev = container_of(inode->i_cdev, struct char_devices, cdev);
 	filp->private_data = dev;
-
 	pr_info(" OPENING device: %s:\n\n", MYDEV_NAME);
 	
 	return 0;
@@ -58,8 +56,43 @@ static int mycdrv_open(struct inode *inode, struct file *filp)
 
 static int mycdrv_release(struct inode *inode, struct file *file)
 {
-	pr_info(" CLOSING device: %s:\n\n", MYDEV_NAME);
+	pr_info(" CLOSING device: %s:\n", MYDEV_NAME);
 	return 0;
+}
+
+static loff_t
+ mycdrv_lseek(struct file *filp, loff_t off, int whence){
+	struct char_devices *dev = filp->private_data;
+	loff_t newpos;
+	switch(whence) {
+	  case 0: /* SEEK_SET */
+		newpos = off;
+		break;
+
+	  case 1: /* SEEK_CUR */
+		newpos = filp->f_pos + off;
+		break;
+
+	  case 2: /* SEEK_END */
+		newpos = dev->buffer_size + off;
+		break;
+
+	  default: /* can't happen */
+		return -EINVAL;
+	}
+	if (newpos < 0) return -EINVAL;
+	filp->f_pos = newpos;
+	
+	if(newpos >= dev->buffer_size){
+		unsigned char * temp = dev->data;
+		dev->data = (unsigned char *)kzalloc(dev->buffer_size+1024,GFP_KERNEL);
+		copy_to_user(dev->data,temp,dev->buffer_size);
+		dev->buffer_size += 1024;
+		kfree(temp);
+		pr_info("Allocated a new buffer of size %li \n",dev->buffer_size);
+		pr_info("New file position %lli \n",filp->f_pos);
+	}
+	return newpos;
 }
 
 static ssize_t
@@ -77,7 +110,8 @@ mycdrv_read(struct file *filp, char __user * buf, size_t count, loff_t * f_pos)
 	if( !dev || dev->data == NULL){
 		goto out;
 	}
-
+	pr_info("The file position is: %lli. The count is %lu. file size %lu.\n",
+							*f_pos, count, dev->buffer_size);
 	if( copy_to_user(buf,dev->data+*f_pos,count) ){
 		retval = -EFAULT;
 		goto out;
@@ -95,11 +129,14 @@ mycdrv_write(struct file *filp, const char __user * buf, size_t count,
 {
 	struct char_devices * dev = filp->private_data;
 	ssize_t retval = -ENOMEM;
+	
+	pr_info("The file position is: %lli \n",*f_pos);
 	if(down_interruptible(&dev->sem))
 		return -ERESTARTSYS;
 	if(!dev || !dev->data)
 		goto out;
 	if(count+*f_pos > dev->buffer_size){
+		pr_info("The count + position is greater than the buffer size \n");
 		count = dev->buffer_size-*f_pos;
 	}
 	if(copy_from_user(dev->data+*f_pos, buf, count)){
@@ -108,17 +145,58 @@ mycdrv_write(struct file *filp, const char __user * buf, size_t count,
 	}
 	*f_pos += count;
 	retval = count;
-	if(dev->buffer_size < *f_pos)
+	if(dev->buffer_size < *f_pos){
+		pr_info("Buffer size is less than position...\n");
 		dev->buffer_size = *f_pos;
+	}
 out:
 	up(&dev->sem);
 	return retval;
 }
 
+static long mycdrv_ioctl(struct file *filp, unsigned int cmd, unsigned long arg){
+	int err = 0;
+	int retval = 0;
+	struct char_devices *dev;
+	if (_IOC_TYPE(cmd) != CDRV_IOC_MAGIC) return -ENOTTY;
+
+	/*
+	 * the direction is a bitmask, and VERIFY_WRITE catches R/W
+	 * transfers. `Type' is user-oriented, while
+	 * access_ok is kernel-oriented, so the concept of "read" and
+	 * "write" is reversed
+	 */
+	if (_IOC_DIR(cmd) & _IOC_READ)
+		err = !access_ok(VERIFY_WRITE, (void __user *)arg, _IOC_SIZE(cmd));
+	else if (_IOC_DIR(cmd) & _IOC_WRITE)
+		err =  !access_ok(VERIFY_READ, (void __user *)arg, _IOC_SIZE(cmd));
+	if (err) return -EFAULT;
+
+	dev = filp->private_data;
+
+	switch (cmd)
+	{
+	case ASP_CLEAR_BUF:
+		filp->f_pos = 0;
+		kfree(dev->data);
+		dev->buffer_size = ramdisk_size;
+		dev->data = (unsigned char *)kzalloc(dev->buffer_size,GFP_KERNEL);
+		break;
+	
+	default:
+		pr_info("IOCTL cmd: %d Not recognized. \n",cmd);
+		return -ENOTTY;
+		break;
+	}
+	return retval;
+}
+
 static const struct file_operations mycdrv_fops = {
 	.owner = THIS_MODULE,
+	.llseek = mycdrv_lseek,
 	.read = mycdrv_read,
 	.write = mycdrv_write,
+	.unlocked_ioctl = mycdrv_ioctl,
 	.open = mycdrv_open,
 	.release = mycdrv_release,
 };
@@ -129,7 +207,8 @@ static int __init my_init(void)
 	int i = 0;
 	int devices_to_destroy = 0;
 	dev_t dev = 0;
-
+	if(NUM_DEVICES)
+		NUMBER_OF_DEVICES = NUM_DEVICES;
 	/* Get a range of minor numbers (starting with 0) to work with */
 	err = alloc_chrdev_region(&dev,0,NUMBER_OF_DEVICES,MYDEV_NAME);
 	if (err < 0) {
@@ -177,6 +256,7 @@ int build_device(struct char_devices * device_ptr, int index,struct class * char
 	device_ptr->buffer_size = ramdisk_size;
 	device_ptr->block_size = DEVICE_BLOCK_SIZE;
 	sema_init(&device_ptr->sem,1);
+	pr_info("Created a buffer of size: %li \n",device_ptr->buffer_size);
 	
 	// init char device
 	cdev_init(&device_ptr->cdev, &mycdrv_fops);
@@ -227,254 +307,3 @@ module_exit(my_exit);
 
 MODULE_AUTHOR("Jerry Cooperstein");
 MODULE_LICENSE("GPL v2");
-
-
-
-
-
-// #define MYDEV_NAME "mycdrv"
-
-// #define ramdisk_size (size_t) (16 * PAGE_SIZE) // ramdisk size 
-
-// #ifndef DEFAULT_DRIVERS
-// #define DEFAULT_DRIVERS 3  // default number of drivers 
-// #endif
-
-// struct ASP_mycdrv {
-// 	struct cdev device;
-// 	char *ramdisk;
-// 	struct semaphore sem;
-// 	int devNo;
-// 	int size;
-// };
-
-// static struct ASP_mycdrv * my_ASP_mycdrv;
-
-// //NUM_DEVICES defaults to 3 unless specified during insmod
-// int NUM_DEVICES = DEFAULT_DRIVERS;
-// static int major = 0, minor = 0;
-// static struct class *driver_class = NULL;
-// // params
-// // module_param(major, int, S_IRUGO);
-// // module_param(minor, int, S_IRUGO);
-// // module_param(NUM_DEVICES, int, S_IRUGO);
-
-
-// #define CDRV_IOC_MAGIC 'Z'
-// #define ASP_CLEAR_BUF _IOW(CDRV_IOC_MAGIC, 1, int)
-
-
-
-// void cleanup_momdule(void);
-
-// void cleanup_momdule(void){
-// 	int i;
-// 	dev_t devno = MKDEV(major,minor);
-// 	if(my_ASP_mycdrv){
-// 		for(i = 0; i < NUM_DEVICES; ++i){
-// 			kfree(my_ASP_mycdrv[i].ramdisk);
-// 			device_destroy(driver_class, MKDEV(major, i));
-// 			cdev_del(&my_ASP_mycdrv[i].device);	
-// 		}
-// 		kfree(my_ASP_mycdrv);
-// 	}
-
-// 	if (driver_class)
-// 		class_destroy(driver_class);
-
-// 	unregister_chrdev_region(devno,NUM_DEVICES);
-// }
-
-// /*
-//  * Empty out the scull device; must be called with the device
-//  * semaphore held.
-//  */
-// // what does this really do? 
-// // int scull_trim(struct scull_dev *dev)
-// // {
-// // 	// struct scull_qset *next, *dptr;
-// // 	// int qset = dev->qset;   /* "dev" is not-null */
-// // 	// int i;
-
-// // 	// for (dptr = dev->data; dptr; dptr = next) { /* all the list items */
-// // 	// 	if (dptr->data) {
-// // 	// 		for (i = 0; i < qset; i++)
-// // 	// 			kfree(dptr->data[i]);
-// // 	// 		kfree(dptr->data);
-// // 	// 		dptr->data = NULL;
-// // 	// 	}
-// // 	// 	next = dptr->next;
-// // 	// 	kfree(dptr);
-// // 	// }
-// // 	// dev->size = 0;
-// // 	// dev->quantum = scull_quantum;
-// // 	// dev->qset = scull_qset;
-// // 	// dev->data = NULL;
-// // 	return 0;
-// // }
-
-// static int mycdrv_open(struct inode *inode, struct file *filp)
-// {
-
-// 	pr_info("We are opening one of the devices...\n");
-// 	// unsigned int mj = imajor(inode);
-// 	// unsigned int mn = iminor(inode);
-
-// 	// struct ASP_mycdrv * dev = &my_ASP_mycdrv[mn]; 
-// 	// filp->private_data = dev;
-// 	// /* now trim to 0 the length of the device if open was write-only */
-// 	// if ( (filp->f_flags & O_ACCMODE) == O_WRONLY) {
-// 	// 	if (down_interruptible(&dev->sem))
-// 	// 		return -ERESTARTSYS;
-// 	// 	scull_trim(dev); /* ignore errors */
-// 	// 	up(&dev->sem);
-// 	// }
-// 	pr_info(" OPENING device: %s:\n\n", MYDEV_NAME);
-// 	return 0;
-// }
-
-// static int mycdrv_release(struct inode *inode, struct file *file)
-// {
-// 	pr_info(" CLOSING device: %s:\n\n", MYDEV_NAME);
-// 	return 0;
-// }
-
-// static ssize_t
-// mycdrv_read(struct file *filp, char __user * buf, size_t count,
-// 												 loff_t * f_pos)
-// {
-// // 	struct ASP_mycdrv *dev = filp->private_data; 
-// // 	ssize_t retval = -ENOMEM; /* value used in "goto out" statements */
-
-// // 	if (down_interruptible(&dev->sem))
-// // 		return -ERESTARTSYS;
-// // 	if (*f_pos >= ramdisk_size)
-// // 		goto out;
-// // 	if (*f_pos + count > ramdisk_size)
-// // 		count = dev->size - *f_pos;
-
-// // 	ssize_t num;
-// // 	num = count - copy_to_user(buf, dev->ramdisk + *f_pos, count);
-// // 	retval = num;
-// // 	*f_pos += retval;
-// //     pr_info("\n READING function, nbytes=%lu, pos=%d\n", num, (int)*f_pos);
-	
-// // out: 
-// // 	up(&dev->sem);
-// //	return retval;
-// return 0;
-// }
-
-// static ssize_t
-// mycdrv_write(struct file *filp, 
-// 		const char __user * buf, size_t count,
-// 	     loff_t * f_pos)
-// {
-// // 	struct ASP_mycdrv *dev = filp->private_data; 
-// // 	ssize_t retval = -ENOMEM; /* value used in "goto out" statements */
-	
-// // 	if (down_interruptible(&dev->sem))
-// // 		return -ERESTARTSYS;
-
-// // 	if(count+*f_pos >= ramdisk_size)
-// // 		pr_info("Trying to write past buffer\n");
-// // 		goto out;
-
-// // 	if (copy_from_user(dev->ramdisk+*f_pos,buf,count)) {
-// // 		retval = -EFAULT;
-// // 		goto out;
-// // 	}
-// // 	*f_pos += count;
-// // 	retval = count;
-// // 	pr_info("\n WRITING function, nbytes=%lu, pos=%d\n", 
-// // 									count, (int)*f_pos);
-// // out: 
-// // 	up(&dev->sem);
-// //	return retval;
-// return 0;
-// }
-
-// static const struct file_operations character_driver_fops = {
-// 	.owner = THIS_MODULE,
-// 	.read = mycdrv_read,
-// 	.write = mycdrv_write,
-// 	.open = mycdrv_open,
-// 	.release = mycdrv_release,
-// };
-
-// /*
-//  * Set up the char_dev structure for this device.
-//  */
-// static void setup_cdev(struct ASP_mycdrv *dev, int index,
-// 						struct class * class)
-// {
-// 	struct device *device = NULL;
-// 	int err, devno = MKDEV(major, minor + index);
-//     pr_info("Sett");
-// 	cdev_init(&dev->device, &character_driver_fops);
-// 	dev->device.owner = THIS_MODULE;
-// 	//dev->device.ops   = &character_driver_fops;
-// 	err = cdev_add (&dev->device, devno, 1);
-	
-// 	device = device_create(class, NULL, /* no parent device */ 
-// 		devno, NULL, /* no additional data */
-// 		MYDEV_NAME "%d", minor + index);
-
-
-// 	/* Fail gracefully if need be */
-// 	if (err)
-// 		printk(KERN_NOTICE "Error %d adding character device %d", err, index);
-// }
-
-// static int init_driver(void){
-// 	int result, i;
-// 	int err = 0;
-// 	dev_t dev = 0;
-// 	result = alloc_chrdev_region(&dev, minor, NUM_DEVICES,"scull");
-// 	major = MAJOR(dev);
-//     printk(KERN_WARNING "DRIVER: Initializing Driver... \n");
-
-// 	driver_class = class_create(THIS_MODULE,MYDEV_NAME);
-// 	if (IS_ERR(driver_class)) {
-// 		err = PTR_ERR(driver_class);
-// 		goto fail;
-// 	}
-// 	printk(KERN_WARNING "DRIVER: Initializing Driver... \n");
-// 	if (result < 0) {
-// 		printk(KERN_WARNING 
-// 			"DRIVER: can't allocate a major driver, result: %d\n", result);
-// 		return result;
-// 	}
-// 	// allocating a dynamic number of devices here
-// 	my_ASP_mycdrv = kmalloc(NUM_DEVICES * sizeof(struct ASP_mycdrv), GFP_KERNEL);
-// 	if (!my_ASP_mycdrv) {
-// 		result = -ENOMEM;
-// 		goto fail;  /* Make this more graceful */
-// 	}
-// 	memset(my_ASP_mycdrv, 0x00, NUM_DEVICES * sizeof(struct ASP_mycdrv));
-// 	printk(KERN_WARNING "DRIVER: Initializing Driver... \n");
-// 	// now we need to initialize them
-// 	for(i = 0; i < NUM_DEVICES; ++i){
-// 		my_ASP_mycdrv[i].devNo = i;
-// 		my_ASP_mycdrv[i].ramdisk = kmalloc(ramdisk_size, GFP_KERNEL);
-// 		my_ASP_mycdrv[i].size = ramdisk_size;
-// 		sema_init(&my_ASP_mycdrv[i].sem,1);
-// 		setup_cdev(&my_ASP_mycdrv[i],i,driver_class);
-// 	}
-//     pr_info("\nSucceeded in registering character device %s\n", MYDEV_NAME);
-//     printk(KERN_WARNING "DRIVER: Initializing Driver... \n");
-// 	return 0;
-//   fail:
-// 	cleanup_module();
-// 	return result;
-// }
-
-// static void exit_driver(void){
-//     pr_info("\ndevice unregistered\n");
-// }
-
-// module_init(init_driver);
-// module_exit(exit_driver);
-
-// MODULE_AUTHOR("user");
-// MODULE_LICENSE("GPL v2");
