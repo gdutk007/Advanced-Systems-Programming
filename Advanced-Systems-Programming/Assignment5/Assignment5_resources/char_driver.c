@@ -64,6 +64,7 @@ static loff_t
  mycdrv_lseek(struct file *filp, loff_t off, int whence){
 	struct char_devices *dev = filp->private_data;
 	loff_t newpos;
+	
 	switch(whence) {
 	  case 0: /* SEEK_SET */
 		newpos = off;
@@ -81,6 +82,9 @@ static loff_t
 		return -EINVAL;
 	}
 	if (newpos < 0) return -EINVAL;
+
+	if(down_interruptible(&dev->sem))
+		return -ERESTARTSYS;
 	filp->f_pos = newpos;
 	
 	if(newpos >= dev->buffer_size){
@@ -92,6 +96,8 @@ static loff_t
 		pr_info("Allocated a new buffer of size %li \n",dev->buffer_size);
 		pr_info("New file position %lli \n",filp->f_pos);
 	}
+
+	up(&dev->sem);
 	return newpos;
 }
 
@@ -174,6 +180,9 @@ static long mycdrv_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 
 	dev = filp->private_data;
 
+	if(down_interruptible(&dev->sem))
+		return -ERESTARTSYS;
+
 	switch (cmd)
 	{
 	case ASP_CLEAR_BUF:
@@ -188,6 +197,8 @@ static long mycdrv_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 		return -ENOTTY;
 		break;
 	}
+
+	up(&dev->sem);
 	return retval;
 }
 
