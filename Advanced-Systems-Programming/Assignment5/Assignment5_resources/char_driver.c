@@ -64,7 +64,8 @@ static loff_t
  mycdrv_lseek(struct file *filp, loff_t off, int whence){
 	struct char_devices *dev = filp->private_data;
 	loff_t newpos;
-	
+	size_t n;
+
 	switch(whence) {
 	  case 0: /* SEEK_SET */
 		newpos = off;
@@ -85,13 +86,22 @@ static loff_t
 
 	if(down_interruptible(&dev->sem))
 		return -ERESTARTSYS;
+
 	filp->f_pos = newpos;
-	
+
+	pr_info("The new file position is: %lli \n",newpos);
+	pr_info("The new file cursor is: %lli \n",filp->f_pos);
+
 	if(newpos >= dev->buffer_size){
 		unsigned char * temp = dev->data;
-		dev->data = (unsigned char *)kzalloc(dev->buffer_size+1024,GFP_KERNEL);
-		copy_to_user(dev->data,temp,dev->buffer_size);
-		dev->buffer_size += 1024;
+		dev->data = (unsigned char *)kzalloc(dev->buffer_size+newpos+2048,GFP_KERNEL);
+		n = 0;
+		while(n < dev->buffer_size){
+			dev->data[n] = temp[n];
+			++n;
+		}
+		//copy_to_user(&dev->data[0],&temp[0],dev->buffer_size);
+		dev->buffer_size = newpos+2048;
 		kfree(temp);
 		pr_info("Allocated a new buffer of size %li \n",dev->buffer_size);
 		pr_info("New file position %lli \n",filp->f_pos);

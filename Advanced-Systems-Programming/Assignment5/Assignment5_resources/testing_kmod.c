@@ -10,7 +10,8 @@
 
 int main()
 {
-      int fd = open("/dev/mycdrv0", O_RDWR);
+
+      int fd = open("/dev/mycdrv2", O_RDWR);
       if(fd < 0){
             printf("Value of errno: %d\n ", errno);
             printf("The error message is : %s\n",strerror(errno));
@@ -61,8 +62,8 @@ int main()
                   printf("The errno message is : %s\n",strerror(errno));
             }
 
-            int io = 0;
-            io = ioctl(fd,ASP_CLEAR_BUF,0);            
+            // int io = 0;
+            // io = ioctl(fd,ASP_CLEAR_BUF,0);            
 
             offset = lseek(fd,0,SEEK_SET);
             if(offset > 0){

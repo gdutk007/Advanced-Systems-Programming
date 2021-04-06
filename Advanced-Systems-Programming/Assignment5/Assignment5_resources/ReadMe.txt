@@ -18,3 +18,17 @@ and follow the following steps:
 		   in /dev/ are created in the driver with root privileges.
 		   
 4) Unload module : $ sudo rmmod char_driver
+
+
+*******************************************************************************************************
+
+To test the Kernel Module First enter 'make' to create the kernel driver.
+
+1. 'make' to create the Kernel Module 
+2. 'make app' to build the programs used to test the module
+3. 'sudo insmod char_driver.ko NUM_DEVICES=<integer>' to insert the module
+4. 'sudo ./userapp <driver number>' to create the userapp.
+5. 'sudo ./testing' to run other testing app I wrote. (this was just something extra I made)
+6. 'sudo rmmod char_driver' To remove the module. 
+
+********************************************************************************************************
