@@ -43,7 +43,7 @@ static void * thread1(void * arg){
     fd1 = 0;
     io = 0;
     fd1 = open("/dev/a5", O_RDWR);
-    cout << "Changing mode in thread 1 ... \n";
+    cout << "Changing mode in thread...\n";
     io = ioctl(fd1,E2_IOCMODE1,0);            
     int ret = close(fd1);
     pthread_exit(nullptr);
