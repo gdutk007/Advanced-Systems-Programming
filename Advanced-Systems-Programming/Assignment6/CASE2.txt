@@ -1,0 +1,14 @@
+
+    /*           Case 2
+        for case 2 we will have two threads and the deadlock happens 
+        when switching from mode 1 to mode 2. 
+        - First we open the driver twice, this will block 
+        on the second open. 
+        - When we block on the second open, we switch back 
+        to thread 1 and try to use ioctl to switch to mode 2. 
+        - When we try to switch to mode 2 we have to wait until 
+        (devc->count1 == 1) so we start to block again. 
+        - While blocking and waiting for (devc->count1 == 1) we switch 
+        back to the other thread which is still blocked waiting for 
+        semaphore 2 to become unlocked.  
+    */

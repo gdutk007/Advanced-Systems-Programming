@@ -19,7 +19,7 @@ using namespace std;
     /*           Case 1
    for case 1  the device driver 
    seems to be locking semaphore 2 and not 
-   releasing it before exiting. Opening 
+   releasing it before exiting during open(). Opening 
    the driver several times will cause 
    the locked semaphore to deadlock. 
 
