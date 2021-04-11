@@ -51,6 +51,7 @@ static void * thread1(void * arg){
        we will block trying to lock semaphore 1. 
        This will cause a deadlock. 
     */
+    cout << "Changing mode in thread 1 ... \n";
     io = ioctl(fd1,E2_IOCMODE1,0);            
     pthread_exit(nullptr);
 }
@@ -66,6 +67,7 @@ static void * thread2(void * arg){
        Since semaphore 2 is still locked we will block trying to 
        switch back to mode 1.
     */
+    cout << "Changing mode in thread 2 ... \n";
     io = ioctl(fd1,E2_IOCMODE1,0);  
     pthread_exit(nullptr);
 }
