@@ -103,6 +103,7 @@ you need to make sure to run them with sudo privileges.
     previous thread. This would mean that when reading from the 
     ramdisk buffer data will be read incorrectly. The specific line is 
     the following: 
+
         copy_from_user(devc->ramdisk, buf, count);   (Line 127)
         and 
         ret = count - copy_to_user(buf, devc->ramdisk, count); (Line 100)
@@ -111,6 +112,32 @@ you need to make sure to run them with sudo privileges.
     since we are not keeping track of the position and we cannot guarantee the data.
     When reading and semaphore 1 is locked before reading/writing and unlocked after 
     reading/writing. 
+
+
+    The entire code segment is here: 
+        (line 121 - 129)
+    	else {
+        if (*f_pos + count > ramdisk_size) {
+            printk("Trying to read past end of buffer!\n");
+            up(&devc->sem1);
+            return ret;
+        }
+        ret = count - copy_from_user(devc->ramdisk, buf, count);
+		up(&devc->sem1);
+	}
+
+    and also here: 
+      (line 94 - 102)
+    else {
+          if (*f_pos + count > ramdisk_size) {
+             printk("Trying to read past end of buffer!\n");
+             up(&devc->sem1);
+             return ret;
+          }
+          ret = count - copy_to_user(buf, devc->ramdisk, count);
+	  up(&devc->sem1);
+	}
+
 */
 
 /*                  CASE 2
@@ -118,7 +145,31 @@ you need to make sure to run them with sudo privileges.
     during "MODE 1". During "MODE 1" read and write does not protect the ramdisk buffer.
     This means that if someone tried to run several read and write threads in parallel 
     the data in the buffer could be overwritten and misread. This is similar to Case 1 
-    but even more incorrect since sempahore 1 is released before reading and writing. 
+    but even more incorrect since sempahore 1 is released before reading and writing.
+
+    Code segment is here:
+        (line 86 - 93)
+    if (devc->mode == MODE1) {
+	   up(&devc->sem1);
+           if (*f_pos + count > ramdisk_size) {
+              printk("Trying to read past end of buffer!\n");
+              return ret;
+           }
+	   ret = count - copy_to_user(buf, devc->ramdisk, count);
+	}
+
+
+    and also here: 
+        (113-120)
+    if (devc->mode == MODE1) {
+		up(&devc->sem1);
+        if (*f_pos + count > ramdisk_size) {
+            printk("Trying to read past end of buffer!\n");
+            return ret;
+        }
+        ret = count - copy_from_user(devc->ramdisk, buf, count);
+	}
+
 */
 
 /*                  CASE 3
@@ -131,7 +182,36 @@ you need to make sure to run them with sudo privileges.
     until the mode 2 counter is decremented to 1. To avoid deadlocks and for the number to be correct, 
     it would be better if the driver would decrement the count befor waiting. That way if every thread 
     tried to switch to MODE 1, it would update the value immediately. The mode 2 counter would reflect 
-    the real number of threads trying to be in mode 1.  
+    the real number of threads trying to be in mode 1.
+
+    The critical section is here: 
+            (168-186)
+    		case E2_IOCMODE1:
+				down_interruptible(&devc->sem1);
+				if (devc->mode == MODE1) {
+				   up(&devc->sem1);
+				   break;
+				}
+				if (devc->count2 > 1) {
+				   while (devc->count2 > 1) {
+				       up(&devc->sem1);
+				       wait_event_interruptible(devc->queue2, (devc->count2 == 1));
+				       down_interruptible(&devc->sem1);
+				   }
+				}
+				devc->mode = MODE1;
+                devc->count2--;
+                devc->count1++;
+				down_interruptible(&devc->sem2);
+				up(&devc->sem1);
+				break;
+
+    and the other one is here: 
+        (lines 55-57)
+
+        else if (devc->mode == MODE2) {
+        devc->count2++;
+        }
 
 */
 
@@ -141,5 +221,36 @@ you need to make sure to run them with sudo privileges.
     They make sure to aquire the semaphore 1 lock before doing anything to count1 and 
     count2. The prevents buggy behavior reading and writing to these values. After they 
     are done they release their locks and the functions exit.  
+
+    The first critical section of open() is here: 
+
+        (Line 48-59)
+    down_interruptible(&devc->sem1);
+    if (devc->mode == MODE1) {
+        devc->count1++;
+        up(&devc->sem1);
+        down_interruptible(&devc->sem2);
+        return 0;
+    }
+    else if (devc->mode == MODE2) {
+        devc->count2++;
+    }
+    up(&devc->sem1);
+
+    And the second one is here: 
+        (line 65-77)
+    down_interruptible(&devc->sem1);
+    if (devc->mode == MODE1) {
+        devc->count1--;
+        if (devc->count1 == 1)
+            wake_up_interruptible(&(devc->queue1));
+			up(&devc->sem2);
+    }
+    else if (devc->mode == MODE2) {
+        devc->count2--;
+        if (devc->count2 == 1)
+            wake_up_interruptible(&(devc->queue2));
+    }
+    up(&devc->sem1);
 */
 
