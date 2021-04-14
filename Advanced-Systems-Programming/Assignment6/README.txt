@@ -16,8 +16,13 @@ This should create the kernel driver and the programs which
 produce deadlock scenerios. To run the deadlock scenarios 
 you need to make sure to run them with sudo privileges. 
 
+In Addition the deadlock programs were written in c++ using pthreads. 
+Some of the program cases deadlock and the processes need to be terminated. Sometimes 
+it is necessary to unload and reload the kernel module because the process does not 
+release the driver(so it stays locked forever). Please let me know if something isn't 
+clear or something does not compile and I will reach out to see what the issue it. 
 
-
+Thanks 
 
 
 
