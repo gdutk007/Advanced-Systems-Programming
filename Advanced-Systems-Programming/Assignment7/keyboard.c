@@ -10,7 +10,7 @@
 #include <sys/types.h>
 #include <pthread.h>
 #include <errno.h>
-
+#include "simulator.h"
 
 #define MAX_BUFF 2048
 
@@ -24,7 +24,7 @@ static int ctrl_endpoint2[2];
 // process one
 static void * InterruptThread(void * arg);
 static void * ControlThread(void * arg);
-void readFile(char *argv[]);
+//void readFile(char *argv[]);
 
 
 int main(int argc, char *argv[]){
@@ -46,7 +46,7 @@ int main(int argc, char *argv[]){
     int thread;
 
     // reading file
-    readFile(argv);
+    //readFile(argv);
     thread = pthread_create(&mainT,NULL,InterruptThread,(void*)argv);
     thread = pthread_create(&mainT,NULL,ControlThread,(void*)argv);
 
@@ -67,26 +67,4 @@ static void * ControlThread(void * arg){
 
     }
     pthread_exit(NULL);
-}
-
-void readFile(char *argv[]){
-    // opening file
-    int fd = open(argv[1], O_RDWR);
-    if(fd < 0){
-            printf("File could not be opened. Failed with: %s\n",strerror(errno));
-    }
-    char c = '\0';
-    ssize_t bytes_read = 0;
-    size_t i = 0;
-    do{
-        bytes_read = read(fd,&c,1);
-        if(bytes_read > 0){
-           buffer[i++] = c;
-        }
-    }while(bytes_read != 0 && i < MAX_BUFF);
-    if(i >= MAX_BUFF){
-        printf("Buffer ran out of space!\n");
-        exit(0);
-    }
-    buffer[i] = '\0';
 }

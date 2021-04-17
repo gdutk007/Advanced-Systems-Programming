@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
+#include "simulator.h"
 
 // process two
 void usb_kdb_open();
