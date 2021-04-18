@@ -104,8 +104,6 @@ int main(int argc, char *argv[]){
     int thread;
     child_a = fork();
     // child a will be the driver
-    close(ctrl_endpoint1[0]);
-    close(ctrl_endpoint1[1]);
     if(!child_a){
         // the keyboard (child a)
         pthread_t tid[2];
@@ -131,8 +129,8 @@ int main(int argc, char *argv[]){
     // close pipes
     close(int_endpoint[0]);
     close(int_endpoint[1]);
-    // close(ctrl_endpoint1[0]);
-    // close(ctrl_endpoint1[1]);
+    close(ctrl_endpoint1[0]);
+    close(ctrl_endpoint1[1]);
     close(ctrl_endpoint2[0]);
     close(ctrl_endpoint2[1]);
     // wait for processes
@@ -155,41 +153,30 @@ static void * interrupt_keyboard_thread(void * arg){
     char c = '\0';
     ssize_t bytes_read = 0;
     size_t i = 0;
-    printf("%s: threading pid: %i \n",__func__,getpid());
     int signaled = 0;
     do{
         c = '\0';
-        //printf("%s: about to get lock. pid:  %i \n",__func__,getpid());
         pthread_mutex_lock(m_lock_int);
         while(*done_reading == 0 ){
-            //printf("%s: waiting...\n",__func__);
             pthread_cond_wait(m_cv_int,m_lock_int);
         }
-        //printf("%s: got lock, about to read. pid:  %i \n",__func__,getpid());
         *done_reading = 0;
         pthread_mutex_lock(m_lock_led);
         bytes_read = read(text_file_fd,&c,1);
         if(bytes_read > 0){
-            //printf("caps: %i pid: %i\n",CAPS_LOCK,getpid());
             if(isalpha(c) && CAPS_LOCK){
                 if((c >96) && (c <123)) c ^=0x20;
             }
-            if (write(int_endpoint[1], &c, bytes_read) != bytes_read)
-                         printf("Failed writing with errno: %s \n",strerror(errno));
+            write(int_endpoint[1], &c, bytes_read);
         }
-        //printf("%s: got to unlock. pid:  %i \n",__func__,getpid());
         pthread_mutex_unlock(m_lock_led);
         pthread_mutex_unlock(m_lock_int);
-        //sleep(3);
-        //printf("%s: unlocked, about to wait. pid:  %i \n",__func__,getpid());
     }while(bytes_read != 0);
 
     pthread_mutex_lock(m_lock_int);
     *done_reading = -1;
     pthread_mutex_unlock(m_lock_int);
-
     *kill_thread = 1;
-    printf("\n%s: exiting thread: %i \n",__func__,getpid());
     close(int_endpoint[1]);
     pthread_exit(NULL);
 }
@@ -202,13 +189,13 @@ static void * control_keyboard_thread(void * arg){
         bytes_read = read(ctrl_endpoint2[0],&c,1); // blocking read on pipe
         if(bytes_read > 0){
             pthread_mutex_lock(m_lock_led);
-            CAPS_LOCK = (*led_buff == 1) ? !CAPS_LOCK : CAPS_LOCK;  
-            //printf("led buff: %i, caps after: %i pid: %i \n",*led_buff,CAPS_LOCK,getpid());
-            //printf("letter %c, caps after: %i \n",c,CAPS_LOCK);
+            if(*led_buff == 1){
+                CAPS_LOCK = !CAPS_LOCK;
+                caps_history[caps_delim++] = CAPS_LOCK;
+            }
             pthread_mutex_unlock(m_lock_led);
         }
     }
-    printf("%s: exiting thread: %i \n",__func__,getpid());
     pthread_exit(NULL);
 }
 
@@ -217,12 +204,9 @@ static void * interrupt_driver_thread(void * arg){
     ssize_t bytes_read = 0;
     size_t i = 0;
     int val = 0;
-    printf("%s: threading pid: %i \n",__func__,getpid());
     do{
         c = '\0';
-        //printf("%s: about to get lock. pid:  %i \n",__func__,getpid());
         pthread_mutex_lock(m_lock_int);
-        //printf("%s: got lock, about to read. pid:  %i \n",__func__,getpid());
         bytes_read = read(int_endpoint[0],&c,1); // blocking read on pipe
         if(bytes_read > 0){
             // dispatch usb_kbd_irq
@@ -233,11 +217,9 @@ static void * interrupt_driver_thread(void * arg){
             pthread_join(tid, NULL);
             *done_reading = 1;
         }
-        //printf("%s: got to unlock. pid:  %i \n",__func__,getpid());
         val = *done_reading;
         pthread_cond_signal(m_cv_int);
         pthread_mutex_unlock(m_lock_int);
-        //printf("%s: unlocked, about to wait. pid:  %i \n",__func__,getpid());
     }while(val != -1);
     pthread_cond_signal(m_cv_int);
     *kill_thread = 1;
@@ -245,7 +227,6 @@ static void * interrupt_driver_thread(void * arg){
     send_control = 1;
     pthread_cond_signal(&control_cv);
     pthread_mutex_unlock(&control_mutex);
-    printf("\n%s: exiting thread: %i \n",__func__,getpid());
     close(int_endpoint[0]);
     close(ctrl_endpoint2[1]);
     close(ctrl_endpoint2[0]);
@@ -258,12 +239,10 @@ static void * control_driver_thread(void * arg){
     while(*kill_thread == 0){
         pthread_mutex_lock(&control_mutex);
         while(!send_control) pthread_cond_wait(&control_cv,&control_mutex);
-        if (write(ctrl_endpoint2[1], &c, 1) != 1)
-                         printf("Failed writing with errno: %s \n",strerror(errno));
+        write(ctrl_endpoint2[1], &c, 1);
         send_control = 0;
         pthread_mutex_unlock(&control_mutex);
     }
-    printf("\n%s: exiting thread: %i \n",__func__,getpid());
     *kill_control = 1;
     pthread_exit(NULL);
 }
@@ -278,7 +257,6 @@ static void * usb_kbd_irq(void * arg){
             printf("%c",c);
         }
     }
-    //printf("%s: exiting thread: %i \n",__func__,getpid());
     pthread_exit(NULL);
 }
 
@@ -301,7 +279,5 @@ static void * usb_kbd_event(void * arg){
     send_control = 1;
     pthread_cond_signal(&control_cv);
     pthread_mutex_unlock(&control_mutex);
-
-    //printf("  \n%s: exiting thread: %i \n",__func__,getpid());
     pthread_exit(NULL);
 }
