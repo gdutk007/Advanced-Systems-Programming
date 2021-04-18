@@ -11,11 +11,7 @@
 #include <pthread.h>
 #include <errno.h>
 
-#define CHARS 256
-
 typedef struct process_param {
     int  fd_num; 
     char fds[64];
-    int  argc;
-    char argv[CHARS];
 } process_param_t;

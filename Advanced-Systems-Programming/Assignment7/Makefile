@@ -1,9 +1,7 @@
 Assignment: simulator
 
 simulator:
-	gcc driver_simulator.c -o driver_simulator -lpthread
-	gcc keyboard.c         -o keyboard         -lpthread
-	gcc simulator.c        -o sim              -lpthread
+	gcc keyboard_sim.c -o sim -lpthread -lrt
 
 clean:
-	rm -rf *.o *.ko *.mod.* *.symvers *.order *~  driver_simulator keyboard sim
+	rm -rf *.o *.ko *.mod.* *.symvers *.order *~  sim
